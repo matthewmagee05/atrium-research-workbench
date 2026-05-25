@@ -40,25 +40,23 @@ describe("sandbox wrapping", () => {
     expect(resolveSandboxPolicy()).toBe("off");
   });
 
-  it("throws when policy=required and no sandbox tool available on this platform", () => {
+  it("policy=required yields a wrap or a throw, never a silent no-op", () => {
     process.env.RWB_SANDBOX = "required";
-    if (process.platform === "linux" || process.platform === "darwin") {
-      try {
-        wrapCommandForSandbox("python3", { moduleDir: "/m", scratchDir: "/s", allowNetwork: false });
-      } catch (e) {
-        expect((e as Error).message).toMatch(/sandbox/i);
-        return;
-      }
-    } else {
-      expect(() => wrapCommandForSandbox("python3", { moduleDir: "/m", scratchDir: "/s", allowNetwork: false }))
-        .toThrow(/sandbox/i);
+    try {
+      const result = wrapCommandForSandbox("python3", { moduleDir: "/m", scratchDir: "/s", allowNetwork: false });
+      // If we get here, a sandbox tool was available — mechanism must be non-"none"
+      expect(result.mechanism).not.toBe("none");
+      if (result.cleanup) result.cleanup();
+    } catch (e) {
+      // Otherwise we expect an explicit refusal
+      expect((e as Error).message).toMatch(/sandbox/i);
     }
   });
 
-  it("best-effort returns valid mechanism (or none if no tool available)", () => {
+  it("best-effort returns a recognized mechanism", () => {
     process.env.RWB_SANDBOX = "best-effort";
     const result = wrapCommandForSandbox("python3", { moduleDir: "/m", scratchDir: "/s", allowNetwork: false });
-    expect(["none", "bwrap", "sandbox-exec"]).toContain(result.mechanism);
+    expect(["none", "bwrap", "sandbox-exec", "windows-appcontainer", "windows-low-integrity"]).toContain(result.mechanism);
     if (result.cleanup) result.cleanup();
   });
 });
