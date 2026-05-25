@@ -67,6 +67,23 @@ test.describe("Atrium Electron main-process E2E", () => {
     expect(hasHelper).toBe(true);
   });
 
+  test("credentials store: safeStorage round-trip via IPC (set, status, clear)", async () => {
+    // rwb:credentials:set → rwb:credentials:status sequence must work without keytar.
+    const result = await window.evaluate(async () => {
+      // @ts-expect-error window.rwb is injected by preload
+      const api = window.rwb;
+      const before = await api.getCredentialStatus();
+      await api.setCredential("openai", "sk-test-roundtrip-12345");
+      const after = await api.getCredentialStatus();
+      await api.setCredential("openai", "");
+      const cleared = await api.getCredentialStatus();
+      return { before, after, cleared };
+    });
+    expect(result.before.openai).toBe(false);
+    expect(result.after.openai).toBe(true);
+    expect(result.cleared.openai).toBe(false);
+  });
+
   test("preload exposes bundle import/verify/diff helpers", async () => {
     const exposed = await window.evaluate(() => ({
       // @ts-expect-error window.rwb is injected by preload

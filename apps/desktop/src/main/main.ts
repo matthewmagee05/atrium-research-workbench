@@ -6,7 +6,6 @@ import {
   freezeProtocol,
   generateEnvironmentLock,
   generateMethods,
-  getCredentialStatus,
   importBundle,
   initProject,
   inspectBundleTrust,
@@ -16,11 +15,17 @@ import {
   resolveCorePaths,
   resolveReviewItem,
   runProtocol,
-  setCredential,
   testCredential,
   validateProtocol,
   verifyBundle
 } from "@research-workbench/core";
+import {
+  desktopGetCredentialStatus,
+  desktopSetCredential,
+  isCredentialStoreAvailable,
+  loadCredentialsIntoEnv,
+  type Provider,
+} from "./credentials-store";
 
 const repoRoot = path.resolve(__dirname, "../../..", "..");
 const corePaths = resolveCorePaths(repoRoot);
@@ -46,7 +51,10 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  loadCredentialsIntoEnv();
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -69,9 +77,12 @@ ipcMain.handle("rwb:modules:schema", (_event, moduleId: string, schemaRef: strin
   }
   return JSON.parse(require("node:fs").readFileSync(resolved, "utf8"));
 });
-ipcMain.handle("rwb:credentials:set", (_event, provider: "anthropic" | "ollama" | "openai", value: string) => setCredential(provider, value));
+ipcMain.handle("rwb:credentials:set", (_event, provider: Provider, value: string) => {
+  desktopSetCredential(provider, value);
+});
 ipcMain.handle("rwb:credentials:test", (_event, provider: "anthropic" | "ollama" | "openai", value: string) => testCredential(provider, value));
-ipcMain.handle("rwb:credentials:status", () => getCredentialStatus());
+ipcMain.handle("rwb:credentials:status", () => desktopGetCredentialStatus());
+ipcMain.handle("rwb:credentials:available", () => isCredentialStoreAvailable());
 ipcMain.handle("rwb:review:list", (_event, projectDir: string) => listReviewItems(projectDir));
 ipcMain.handle("rwb:review:resolve", (_event, projectDir: string, reviewId: string, decision: unknown) => resolveReviewItem(projectDir, reviewId, decision));
 
