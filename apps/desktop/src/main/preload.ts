@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 
 contextBridge.exposeInMainWorld("rwb", {
   listModules: () => ipcRenderer.invoke("rwb:modules:list"),
+  loadModuleSchema: (moduleId: string, schemaRef: string) => ipcRenderer.invoke("rwb:modules:schema", moduleId, schemaRef),
   listReviewItems: (projectDir: string) => ipcRenderer.invoke("rwb:review:list", projectDir),
   resolveReviewItem: (projectDir: string, reviewId: string, decision: unknown) => ipcRenderer.invoke("rwb:review:resolve", projectDir, reviewId, decision),
   setCredential: (provider: string, value: string) => ipcRenderer.invoke("rwb:credentials:set", provider, value),

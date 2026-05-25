@@ -60,6 +60,14 @@ app.on("activate", () => {
 });
 
 ipcMain.handle("rwb:modules:list", () => listModules(corePaths.modulesRoot).map((mod) => mod.manifest));
+ipcMain.handle("rwb:modules:schema", (_event, moduleId: string, schemaRef: string) => {
+  const moduleDir = path.join(corePaths.modulesRoot, moduleId);
+  const resolved = path.resolve(moduleDir, schemaRef);
+  if (!resolved.startsWith(path.resolve(moduleDir))) {
+    throw new Error("Schema path escapes module directory");
+  }
+  return JSON.parse(require("node:fs").readFileSync(resolved, "utf8"));
+});
 ipcMain.handle("rwb:credentials:set", (_event, provider: "anthropic" | "ollama" | "openai", value: string) => setCredential(provider, value));
 ipcMain.handle("rwb:credentials:test", (_event, provider: "anthropic" | "ollama" | "openai", value: string) => testCredential(provider, value));
 ipcMain.handle("rwb:review:list", (_event, projectDir: string) => listReviewItems(projectDir));

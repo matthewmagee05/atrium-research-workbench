@@ -26,6 +26,7 @@ declare global {
   interface Window {
     rwb?: {
       listModules: () => Promise<Array<Record<string, unknown>>>;
+      loadModuleSchema: (moduleId: string, schemaRef: string) => Promise<Record<string, unknown>>;
       listReviewItems: (projectDir: string) => Promise<Array<Record<string, unknown>>>;
       resolveReviewItem: (projectDir: string, reviewId: string, decision: unknown) => Promise<Record<string, unknown>>;
       setCredential: (provider: "anthropic" | "ollama" | "openai", value: string) => Promise<void>;

@@ -2,15 +2,22 @@ import React, { useCallback, useMemo, useRef } from "react";
 import ReactFlow, {
   Background,
   Controls,
+  MarkerType,
   type Connection,
   type Edge,
   type Node,
   type NodeChange,
+  type NodeTypes,
   type ReactFlowInstance,
 } from "reactflow";
 import { useWorkspace } from "../store/workspace";
 import { validateEdge } from "../store/edge-validation";
+import { moduleExtras } from "../store/module-catalog";
+import { ModuleNode } from "./ModuleNode";
+import { Workflow } from "lucide-react";
 import "reactflow/dist/style.css";
+
+const nodeTypes: NodeTypes = { module: ModuleNode };
 
 export function PipelineCanvas() {
   const modules = useWorkspace((s) => s.modules);
@@ -18,6 +25,7 @@ export function PipelineCanvas() {
   const pipelineEdges = useWorkspace((s) => s.pipelineEdges);
   const addPipelineNode = useWorkspace((s) => s.addPipelineNode);
   const addPipelineEdge = useWorkspace((s) => s.addPipelineEdge);
+  const removePipelineEdge = useWorkspace((s) => s.removePipelineEdge);
   const updateNodePosition = useWorkspace((s) => s.updateNodePosition);
   const setSelectedNodeId = useWorkspace((s) => s.setSelectedNodeId);
   const setStatus = useWorkspace((s) => s.setStatus);
@@ -25,16 +33,13 @@ export function PipelineCanvas() {
 
   const rfNodes: Node[] = useMemo(
     () =>
-      pipelineNodes.map((n) => {
-        const mod = modules.find((m) => m.id === n.moduleId);
-        return {
-          id: n.id,
-          position: n.position,
-          data: { label: `${mod?.name ?? n.moduleId}\n${mod?.stage ?? ""}` },
-          type: "default",
-        };
-      }),
-    [pipelineNodes, modules]
+      pipelineNodes.map((n) => ({
+        id: n.id,
+        position: n.position,
+        type: "module",
+        data: { pipelineNodeId: n.id, moduleId: n.moduleId },
+      })),
+    [pipelineNodes],
   );
 
   const rfEdges: Edge[] = useMemo(
@@ -42,39 +47,40 @@ export function PipelineCanvas() {
       pipelineEdges.map((e) => ({
         id: e.id,
         source: e.source,
+        sourceHandle: e.sourcePort,
         target: e.target,
+        targetHandle: e.targetPort,
         label: `${e.sourcePort} → ${e.targetPort}`,
         animated: true,
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { strokeWidth: 2 },
       })),
-    [pipelineEdges]
+    [pipelineEdges],
   );
 
   const onNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      const positionChanges = changes.filter(
-        (c): c is NodeChange & { type: "position"; id: string; position?: { x: number; y: number } } =>
-          c.type === "position" && "position" in c && c.position !== undefined
-      );
-      for (const change of positionChanges) {
-        if (change.position) {
+      for (const change of changes) {
+        if (change.type === "position" && "position" in change && change.position) {
           updateNodePosition(change.id, change.position);
         }
       }
     },
-    [updateNodePosition]
+    [updateNodePosition],
   );
 
   const onConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
+      const sourcePort = connection.sourceHandle;
+      const targetPort = connection.targetHandle;
+      if (!sourcePort || !targetPort) {
+        setStatus("Edge rejected: drag from a specific output port to a specific input port");
+        return;
+      }
       const sourceNode = pipelineNodes.find((n) => n.id === connection.source);
       const targetNode = pipelineNodes.find((n) => n.id === connection.target);
       if (!sourceNode || !targetNode) return;
-
-      const sourceMod = modules.find((m) => m.id === sourceNode.moduleId);
-      const targetMod = modules.find((m) => m.id === targetNode.moduleId);
-      const sourcePort = sourceMod?.outputs?.[0]?.name ?? "output";
-      const targetPort = targetMod?.inputs?.[0]?.name ?? "input";
 
       const result = validateEdge(sourceNode, sourcePort, targetNode, targetPort, modules, pipelineEdges);
       if (!result.valid) {
@@ -83,22 +89,36 @@ export function PipelineCanvas() {
       }
 
       addPipelineEdge({
-        id: `${connection.source}-${connection.target}-${Date.now().toString(36)}`,
+        id: `${connection.source}:${sourcePort}-${connection.target}:${targetPort}-${Date.now().toString(36)}`,
         source: connection.source,
         sourcePort,
         target: connection.target,
         targetPort,
       });
+      setStatus(`Connected ${sourcePort} → ${targetPort}`);
     },
-    [pipelineNodes, pipelineEdges, modules, addPipelineEdge, setStatus]
+    [pipelineNodes, pipelineEdges, modules, addPipelineEdge, setStatus],
+  );
+
+  const onEdgesDelete = useCallback(
+    (edges: Edge[]) => {
+      for (const edge of edges) {
+        removePipelineEdge(edge.id);
+      }
+    },
+    [removePipelineEdge],
   );
 
   const onNodeClick = useCallback(
     (_event: React.MouseEvent, node: Node) => {
       setSelectedNodeId(node.id);
     },
-    [setSelectedNodeId]
+    [setSelectedNodeId],
   );
+
+  const onPaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, [setSelectedNodeId]);
 
   const onDrop = useCallback(
     (event: React.DragEvent) => {
@@ -109,14 +129,15 @@ export function PipelineCanvas() {
         x: event.clientX,
         y: event.clientY,
       });
+      const extras = moduleExtras(moduleId);
       addPipelineNode({
         id: `${moduleId}-${Date.now().toString(36)}`,
         moduleId,
-        params: {},
+        params: { ...(extras.recommendedParams ?? {}) },
         position,
       });
     },
-    [addPipelineNode]
+    [addPipelineNode],
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -126,17 +147,34 @@ export function PipelineCanvas() {
 
   return (
     <section className="canvas" onDrop={onDrop} onDragOver={onDragOver}>
+      {pipelineNodes.length === 0 && (
+        <div className="canvasEmpty">
+          <Workflow size={48} />
+          <h3>Your pipeline is empty</h3>
+          <p>Drag modules from the library on the left, or pick a template from the welcome screen.</p>
+          <ul>
+            <li><strong>Source</strong> finds papers</li>
+            <li><strong>Normalize</strong> and <strong>Dedupe</strong> clean them</li>
+            <li><strong>Screen</strong> and <strong>Extract</strong> filter and pull data</li>
+            <li><strong>Analyze</strong> and <strong>Report</strong> summarize</li>
+          </ul>
+        </div>
+      )}
       <ReactFlow
         nodes={rfNodes}
         edges={rfEdges}
+        nodeTypes={nodeTypes}
         onNodesChange={onNodesChange}
         onConnect={onConnect}
+        onEdgesDelete={onEdgesDelete}
         onNodeClick={onNodeClick}
+        onPaneClick={onPaneClick}
         onInit={(instance) => { reactFlowInstance.current = instance; }}
-        fitView
-        deleteKeyCode="Backspace"
+        fitView={pipelineNodes.length > 0}
+        deleteKeyCode={["Backspace", "Delete"]}
+        defaultEdgeOptions={{ animated: true, markerEnd: { type: MarkerType.ArrowClosed } }}
       >
-        <Background />
+        <Background gap={20} size={1} />
         <Controls />
       </ReactFlow>
     </section>

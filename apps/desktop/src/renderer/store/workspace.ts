@@ -7,9 +7,11 @@ export type ModuleManifest = {
   stage: string;
   runtime: string;
   description: string;
-  inputs?: Array<{ name: string; schema: string; optional?: boolean }>;
-  outputs?: Array<{ name: string; schema: string; description: string; output_kind: string }>;
+  inputs: Array<{ name: string; schema: string; optional?: boolean }>;
+  outputs: Array<{ name: string; schema: string; description: string; output_kind: string }>;
   params_schema?: string;
+  llm?: { required?: boolean };
+  determinism?: { level?: string };
 };
 
 export type PipelineNode = {
