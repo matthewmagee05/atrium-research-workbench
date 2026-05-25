@@ -83,7 +83,7 @@ export class ArtifactStore {
       resolved_model_ids: []
     }));
     const hashBody = artifactId.replace("sha256:", "");
-    const artifactDir = path.join(this.root, hashBody.slice(0, 2), artifactId);
+    const artifactDir = path.join(this.root, hashBody.slice(0, 2), hashBody);
     ensureDir(artifactDir);
     const dataPath = path.join(artifactDir, "data.json");
     fs.writeFileSync(dataPath, canonicalBytes);
@@ -156,7 +156,7 @@ export class ArtifactStore {
     const row = this.db.prepare("select meta_path from artifacts where artifact_id = ?").get(artifactId) as { meta_path: string } | undefined;
     if (!row) {
       const hashBody = artifactId.replace("sha256:", "");
-      const metaPath = path.join(this.root, hashBody.slice(0, 2), artifactId, "meta.json");
+      const metaPath = path.join(this.root, hashBody.slice(0, 2), hashBody, "meta.json");
       if (!fs.existsSync(metaPath)) {
         throw new Error(`Artifact not found: ${artifactId}`);
       }
@@ -171,7 +171,7 @@ export class ArtifactStore {
       return row.data_path;
     }
     const hashBody = artifactId.replace("sha256:", "");
-    const dataPath = path.join(this.root, hashBody.slice(0, 2), artifactId, "data.json");
+    const dataPath = path.join(this.root, hashBody.slice(0, 2), hashBody, "data.json");
     if (!fs.existsSync(dataPath)) {
       throw new Error(`Artifact data not found: ${artifactId}`);
     }

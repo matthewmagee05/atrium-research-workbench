@@ -80,7 +80,7 @@ bundle/
   audit.log                 # Append-only event log with secrets scrubbed
   modules/<id>/             # Full copy of each module used by the run
   fixtures/<id>/            # Any fixtures the run consumed
-  artifacts/<hash[:2]>/<artifact_id>/{data.json, meta.json}
+  artifacts/<hash[:2]>/<hash>/{data.json, meta.json}    # hash = artifact_id without "sha256:" prefix
   methods.md                # Human-readable methods writeup
   corpus.lock.json          # Pinned corpus state, if produced by the pipeline
   environment.lock.json     # Pinned runtime versions

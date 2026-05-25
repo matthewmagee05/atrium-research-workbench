@@ -287,7 +287,7 @@ export function replayBundle(bundlePath: string): { replayDir: string; materiali
   for (const node of manifest.nodes) {
     for (const output of node.outputs) {
       const hashBody = output.artifact_id.replace("sha256:", "");
-      const src = path.join(bundlePath, "artifacts", hashBody.slice(0, 2), output.artifact_id, "data.json");
+      const src = path.join(bundlePath, "artifacts", hashBody.slice(0, 2), hashBody, "data.json");
       if (!fs.existsSync(src)) {
         throw new Error(`Bundle is missing artifact data: ${output.artifact_id}`);
       }

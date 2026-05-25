@@ -19,7 +19,7 @@ study-bundle/
 ├── fixtures/                # Any fixtures the modules consumed
 │   └── <fixture-id>/...
 └── artifacts/               # Content-addressed artifact storage
-    └── <hash-prefix>/<artifact-id>/{data.json, meta.json}
+    └── <hash-prefix>/<hash>/{data.json, meta.json}    # hash is artifact_id without "sha256:" prefix
 ```
 
 If anything in this layout is missing the bundle is incomplete. **Refuse to verify** until you receive a complete bundle.

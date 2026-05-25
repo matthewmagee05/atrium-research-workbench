@@ -115,11 +115,12 @@ narrative_journal_ref: "journal.md"
     expect(fs.existsSync(path.join(projectDir, "corpus.lock.json"))).toBe(true);
 
     // PRISMA flow should report all records as included (mock said "include" for every record)
+    const prismaHash = prismaArt.artifact_id.replace("sha256:", "");
     const prismaDataPath = path.join(
       projectDir,
       ".rwb", "artifacts",
-      prismaArt.artifact_id.slice("sha256:".length, "sha256:".length + 2),
-      prismaArt.artifact_id,
+      prismaHash.slice(0, 2),
+      prismaHash,
       "data.json",
     );
     expect(fs.existsSync(prismaDataPath)).toBe(true);
@@ -201,10 +202,11 @@ edges:
     expect(manifest.completed_status).toBe("success");
 
     const prismaArt = manifest.nodes.find((n) => n.node_id === "dddddddd-dddd-4ddd-8ddd-aaaaaaaaaaaa")!.outputs[0];
+    const prismaHash = prismaArt.artifact_id.replace("sha256:", "");
     const dataPath = path.join(
       projectDir, ".rwb", "artifacts",
-      prismaArt.artifact_id.slice("sha256:".length, "sha256:".length + 2),
-      prismaArt.artifact_id, "data.json"
+      prismaHash.slice(0, 2),
+      prismaHash, "data.json"
     );
     const prisma = JSON.parse(fs.readFileSync(dataPath, "utf8"));
     expect(prisma.included).toBe(0);
