@@ -12,19 +12,19 @@ body {
   margin: 0;
 }
 
+/* Base button reset. NOTE: do NOT set a global fixed height here —
+   multi-line custom buttons (.templateChoice, .stageHeader, intro
+   cards) get squashed and overflow. Fixed-height pill buttons are
+   handled per-context inside .topbar, .mode, .wizardActions, etc. */
 button {
   border: 1px solid #cbd2d0;
   background: #ffffff;
   color: #182026;
-  height: 34px;
-  min-width: 34px;
   border-radius: 6px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
   cursor: pointer;
   font-size: 13px;
+  font-family: inherit;
+  padding: 6px 12px;
 }
 
 button:disabled {
@@ -36,6 +36,38 @@ button.primary {
   background: #1d5f55;
   color: #ffffff;
   border-color: #1d5f55;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Square-ish 34px icon buttons in the topbar and dialog rows */
+.topbar > .actions > button,
+.dialogHeader > button,
+.budgetHeader > button {
+  height: 34px;
+  min-width: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+}
+
+.mode button {
+  height: 28px;
+  padding: 0 10px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.wizardActions button {
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
 }
 
 /* Layout */
@@ -97,6 +129,7 @@ h2 {
   display: grid;
   grid-template-columns: 280px minmax(420px, 1fr) 340px;
   min-height: 0;
+  height: calc(100vh - 56px);
 }
 
 /* Library */
@@ -710,6 +743,8 @@ pre {
   align-items: center;
   gap: 8px;
   width: 100%;
+  height: auto;
+  min-height: auto;
   padding: 8px 12px;
   background: transparent;
   border: none;
@@ -1204,7 +1239,11 @@ pre {
   cursor: pointer;
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 4px;
+  width: 100%;
+  height: auto;
+  min-height: auto;
 }
 
 .templateChoice:hover { border-color: #2f9b75; }
@@ -1459,13 +1498,14 @@ button.ghost {
 .canvasColumn {
   display: flex;
   flex-direction: column;
-  flex: 1;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
   position: relative;
 }
 
 .canvasColumn .canvas {
-  flex: 1;
+  flex: 1 1 0;
   min-height: 0;
 }
 

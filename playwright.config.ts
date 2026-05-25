@@ -12,6 +12,13 @@ export default defineConfig({
       },
     },
     {
+      name: "visual",
+      testMatch: /visual-smoke\.spec\.ts$/,
+      use: {
+        baseURL: "http://127.0.0.1:5174/",
+      },
+    },
+    {
       name: "electron",
       testMatch: /desktop-electron\.spec\.ts$/,
     },

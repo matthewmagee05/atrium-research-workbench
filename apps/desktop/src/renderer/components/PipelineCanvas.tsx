@@ -33,13 +33,18 @@ export function PipelineCanvas() {
   const lastNodeCount = useRef(0);
 
   useEffect(() => {
-    if (!reactFlowInstance.current) return;
-    if (pipelineNodes.length > 0 && pipelineNodes.length !== lastNodeCount.current) {
-      requestAnimationFrame(() => {
-        reactFlowInstance.current?.fitView({ padding: 0.2, duration: 400 });
-      });
+    if (pipelineNodes.length === 0) {
+      lastNodeCount.current = 0;
+      return;
     }
+    if (pipelineNodes.length === lastNodeCount.current) return;
     lastNodeCount.current = pipelineNodes.length;
+    // Two RAFs to ensure ReactFlow has measured nodes before fit.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        reactFlowInstance.current?.fitView({ padding: 0.15, duration: 300, minZoom: 0.2, maxZoom: 1.2 });
+      });
+    });
   }, [pipelineNodes.length]);
 
   const rfNodes: Node[] = useMemo(
@@ -180,8 +185,14 @@ export function PipelineCanvas() {
         onEdgesDelete={onEdgesDelete}
         onNodeClick={onNodeClick}
         onPaneClick={onPaneClick}
-        onInit={(instance) => { reactFlowInstance.current = instance; }}
+        onInit={(instance) => {
+          reactFlowInstance.current = instance;
+          if (pipelineNodes.length > 0) {
+            requestAnimationFrame(() => instance.fitView({ padding: 0.15, minZoom: 0.2, maxZoom: 1.2 }));
+          }
+        }}
         fitView={pipelineNodes.length > 0}
+        fitViewOptions={{ padding: 0.15, minZoom: 0.2, maxZoom: 1.2 }}
         deleteKeyCode={["Backspace", "Delete"]}
         defaultEdgeOptions={{ animated: true, markerEnd: { type: MarkerType.ArrowClosed } }}
       >
