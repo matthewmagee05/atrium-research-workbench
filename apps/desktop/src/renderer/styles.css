@@ -1389,6 +1389,37 @@ button.ghost {
   color: #64706d;
 }
 
+.topbarError {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 720px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+  background: #fdecea;
+  border: 1px solid #f1c2bd;
+  border-top: none;
+  color: #8a1f15;
+  font-size: 12px;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.topbarError:hover { background: #faddd9; }
+
+.spin {
+  animation: rwbSpin 1s linear infinite;
+}
+
+@keyframes rwbSpin {
+  to { transform: rotate(360deg); }
+}
+
 /* === Settings dialog === */
 .settingsDialog {
   max-width: 640px;

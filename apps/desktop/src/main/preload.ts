@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld("rwb", {
   openProject: () => ipcRenderer.invoke("rwb:project:open"),
   validateProtocol: (protocolPath: string) => ipcRenderer.invoke("rwb:protocol:validate", protocolPath),
   freezeProtocol: (protocolPath: string) => ipcRenderer.invoke("rwb:protocol:freeze", protocolPath),
+  writeProtocol: (protocolPath: string, protocol: unknown) => ipcRenderer.invoke("rwb:protocol:write", protocolPath, protocol),
   run: (protocolPath: string, options?: { mode?: string; varianceIterations?: number }) => ipcRenderer.invoke("rwb:run", protocolPath, options),
   generateMethods: (projectDir: string) => ipcRenderer.invoke("rwb:methods:generate", projectDir),
   lockEnvironment: (projectDir: string) => ipcRenderer.invoke("rwb:env:lock", projectDir),

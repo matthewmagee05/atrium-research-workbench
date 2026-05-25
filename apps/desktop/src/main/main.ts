@@ -1,4 +1,6 @@
 import path from "node:path";
+import fs from "node:fs";
+import YAML from "yaml";
 import { app, BrowserWindow, dialog, ipcMain } from "electron";
 import {
   diffArtifacts,
@@ -98,6 +100,11 @@ ipcMain.handle("rwb:project:open", async () => {
 
 ipcMain.handle("rwb:protocol:validate", (_event, protocolPath: string) => validateProtocol(protocolPath, corePaths));
 ipcMain.handle("rwb:protocol:freeze", (_event, protocolPath: string) => freezeProtocol(protocolPath, corePaths));
+ipcMain.handle("rwb:protocol:write", (_event, protocolPath: string, protocol: unknown) => {
+  fs.mkdirSync(path.dirname(protocolPath), { recursive: true });
+  fs.writeFileSync(protocolPath, YAML.stringify(protocol), "utf8");
+  return { path: protocolPath, bytes: fs.statSync(protocolPath).size };
+});
 ipcMain.handle("rwb:run", (event, protocolPath: string, options?: { mode?: string; varianceIterations?: number }) =>
   runProtocol(protocolPath, corePaths, {
     projectDir: path.dirname(protocolPath),

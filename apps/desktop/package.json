@@ -78,6 +78,7 @@
     "@types/react-dom": "^19.1.5",
     "@vitejs/plugin-react": "^4.5.0",
     "electron-builder": "^25.1.8",
-    "vite": "^6.3.5"
+    "vite": "^6.3.5",
+    "yaml": "^2.7.1"
   }
 }

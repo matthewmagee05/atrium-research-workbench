@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { _electron as electron, expect, test } from "@playwright/test";
 import type { ElectronApplication, Page } from "@playwright/test";
@@ -82,6 +84,55 @@ test.describe("Atrium Electron main-process E2E", () => {
     expect(result.before.openai).toBe(false);
     expect(result.after.openai).toBe(true);
     expect(result.cleared.openai).toBe(false);
+  });
+
+  test("writeProtocol IPC serializes a pipeline to disk", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-e2e-write-"));
+    const protocolPath = path.join(dir, "protocol.yaml");
+    const protocol = {
+      protocol_version: "1.0",
+      project: {
+        id: "deadbeef-dead-4bee-8eef-deadbeefdead",
+        name: "E2E Write Test",
+        description: "Verifies writeProtocol IPC",
+        created_at: "2026-05-25T00:00:00.000Z",
+        created_by: "e2e",
+      },
+      frozen: { is_frozen: false },
+      budget: {
+        max_llm_calls_per_run: 0, max_tokens_per_run: 0, max_cost_usd_per_run: 0,
+        require_confirmation_above_usd: 0, stop_on_budget_exceeded: true,
+      },
+      reproduction_policy: {
+        default_mode: "replay",
+        on_volatile_stage: { rerun_warning: true },
+        on_replayable_stage: { enable_variance_audit: false },
+        human_decisions: { replay_by_default: true, rerun_behavior: "treat_as_suggestions" },
+      },
+      nodes: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Fixture",
+          module: { id: "fixture-source", version: "1.0.0" },
+          params: { fixture_id: "tiny-corpus" },
+        },
+      ],
+      edges: [],
+    };
+
+    const writeResult = await app.evaluate(async ({ ipcMain }, args) => {
+      const handlers = (ipcMain as unknown as { _invokeHandlers: Map<string, (e: unknown, ...a: unknown[]) => unknown> })._invokeHandlers;
+      const writeHandler = handlers.get("rwb:protocol:write");
+      if (!writeHandler) throw new Error("rwb:protocol:write not registered");
+      return await writeHandler({}, args.protocolPath, args.protocol);
+    }, { protocolPath, protocol });
+
+    expect(fs.existsSync(protocolPath)).toBe(true);
+    const content = fs.readFileSync(protocolPath, "utf8");
+    expect(content).toContain("protocol_version");
+    expect(content).toContain("fixture-source");
+    expect((writeResult as { bytes: number }).bytes).toBeGreaterThan(0);
+    fs.rmSync(dir, { recursive: true });
   });
 
   test("preload exposes bundle import/verify/diff helpers", async () => {

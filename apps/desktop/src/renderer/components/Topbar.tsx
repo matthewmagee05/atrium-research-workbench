@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import {
   FileArchive, FileCheck, FolderOpen, Play, ShieldCheck, Download, ShieldAlert,
-  GitCompare, Settings as SettingsIcon, KeyRound, AlertTriangle,
+  GitCompare, Settings as SettingsIcon, KeyRound, AlertTriangle, Loader,
 } from "lucide-react";
 import { useWorkspace, type RunMode } from "../store/workspace";
 import { BundleDialog } from "./BundleDialog";
+import { serializePipelineToProtocol } from "../lib/serialize-protocol";
 
 const api = window.rwb;
 
@@ -29,7 +30,12 @@ export function Topbar() {
   const credentialStatus = useWorkspace((s) => s.credentialStatus);
   const setCredentialStatus = useWorkspace((s) => s.setCredentialStatus);
   const setSettingsOpen = useWorkspace((s) => s.setSettingsOpen);
+  const pipelineNodes = useWorkspace((s) => s.pipelineNodes);
+  const pipelineEdges = useWorkspace((s) => s.pipelineEdges);
+  const modules = useWorkspace((s) => s.modules);
   const [dialogMode, setDialogMode] = useState<"import" | "verify" | "diff" | null>(null);
+  const [runBusy, setRunBusy] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!api?.getCredentialStatus) return;
@@ -50,11 +56,62 @@ export function Topbar() {
     }
   }
 
+  async function writePipelineToDisk(): Promise<boolean> {
+    if (!api || !protocolPath) {
+      setLastError("Open a project before saving.");
+      setStatus("Open a project before saving.");
+      return false;
+    }
+    if (pipelineNodes.length === 0) {
+      setLastError("Pipeline is empty. Drag modules onto the canvas first.");
+      setStatus("Pipeline is empty.");
+      return false;
+    }
+    const serialized = serializePipelineToProtocol(pipelineNodes, pipelineEdges, modules, {
+      projectName: projectDir.split(/[/\\]/).filter(Boolean).pop() ?? "Atrium Project",
+    });
+    await api.writeProtocol(protocolPath, serialized);
+    return true;
+  }
+
+  async function freezeProtocol() {
+    if (!api || !protocolPath) { setLastError("Open a project before freezing."); return; }
+    setLastError(null);
+    setStatus("Saving pipeline to protocol.yaml…");
+    try {
+      const wrote = await writePipelineToDisk();
+      if (!wrote) return;
+      setStatus("Freezing protocol…");
+      await api.freezeProtocol(protocolPath);
+      setStatus("Protocol frozen.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setLastError(`Freeze failed: ${msg}`);
+      setStatus(`Freeze failed: ${msg}`);
+    }
+  }
+
   async function runProtocol() {
-    if (!protocolPath) { setStatus("Choose a project with a protocol.yaml first"); return; }
-    setStatus("Running protocol...");
+    if (!protocolPath) {
+      setLastError("Choose a project first (folder icon in the top bar).");
+      setStatus("Choose a project first.");
+      return;
+    }
+    if (pipelineNodes.length === 0) {
+      setLastError("Pipeline is empty. Drag modules onto the canvas first.");
+      setStatus("Pipeline is empty.");
+      return;
+    }
+    setLastError(null);
+    setRunBusy(true);
     resetRunProgress();
     try {
+      setStatus("Saving pipeline to protocol.yaml…");
+      const wrote = await writePipelineToDisk();
+      if (!wrote) { setRunBusy(false); return; }
+      setStatus("Freezing protocol…");
+      if (api) await api.freezeProtocol(protocolPath);
+      setStatus("Running pipeline…");
       const result = (api ? await api.run(protocolPath, { mode }) : { completed_status: "preview" }) as Record<string, unknown>;
       setLastRun(result);
       setBudget({
@@ -62,17 +119,20 @@ export function Topbar() {
         totalTokens: Number(result.total_tokens ?? 0),
         totalCostUsd: Number(result.total_cost_usd ?? 0),
       });
-      setStatus("Run completed");
+      const status = String(result.completed_status ?? "unknown");
+      if (status === "success") {
+        setStatus(`Run completed: ${result.total_llm_calls ?? 0} LLM calls, $${Number(result.total_cost_usd ?? 0).toFixed(4)}`);
+      } else {
+        setStatus(`Run ${status}.`);
+        setLastError(`Run ${status}. Check the budget drawer or audit log for details.`);
+      }
     } catch (err) {
-      setStatus(`Run failed: ${err}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      setStatus(`Run failed: ${msg}`);
+      setLastError(`Run failed: ${msg}`);
+    } finally {
+      setRunBusy(false);
     }
-  }
-
-  async function freezeProtocol() {
-    if (!api || !protocolPath) return;
-    setStatus("Freezing protocol...");
-    await api.freezeProtocol(protocolPath);
-    setStatus("Protocol frozen");
   }
 
   async function exportBundle() {
@@ -112,7 +172,14 @@ export function Topbar() {
         <span className="actionDivider" />
         <button title="Open project" onClick={openProject}><FolderOpen size={18} /></button>
         <button title="Freeze protocol" onClick={freezeProtocol} disabled={!protocolPath}><FileCheck size={18} /></button>
-        <button title="Run" onClick={runProtocol} disabled={!protocolPath} className="runBtn"><Play size={18} /></button>
+        <button
+          title={runBusy ? "Running…" : "Run"}
+          onClick={runProtocol}
+          disabled={!protocolPath || runBusy || pipelineNodes.length === 0}
+          className="runBtn"
+        >
+          {runBusy ? <Loader size={18} className="spin" /> : <Play size={18} />}
+        </button>
         <span className="actionDivider" />
         <button title="Export bundle" onClick={exportBundle} disabled={!projectDir}><FileArchive size={18} /></button>
         <button title="Import bundle" onClick={() => setDialogMode("import")}><Download size={18} /></button>
@@ -120,6 +187,12 @@ export function Topbar() {
         <button title="Diff artifacts" onClick={() => setDialogMode("diff")} disabled={!projectDir}><GitCompare size={18} /></button>
       </div>
       {dialogMode && <BundleDialog mode={dialogMode} onClose={() => setDialogMode(null)} />}
+      {lastError && (
+        <div className="topbarError" onClick={() => setLastError(null)} title="Click to dismiss">
+          <AlertTriangle size={14} />
+          <span>{lastError}</span>
+        </div>
+      )}
     </header>
   );
 }

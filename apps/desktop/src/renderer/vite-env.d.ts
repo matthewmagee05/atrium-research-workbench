@@ -35,6 +35,7 @@ declare global {
       openProject: () => Promise<string | null>;
       validateProtocol: (protocolPath: string) => Promise<unknown>;
       freezeProtocol: (protocolPath: string) => Promise<unknown>;
+      writeProtocol: (protocolPath: string, protocol: unknown) => Promise<{ path: string; bytes: number }>;
       run: (protocolPath: string, options?: { mode?: string; varianceIterations?: number }) => Promise<unknown>;
       generateMethods: (projectDir: string) => Promise<string>;
       lockEnvironment: (projectDir: string) => Promise<unknown>;
