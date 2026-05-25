@@ -61,22 +61,63 @@ const electronVersion = JSON.parse(fs.readFileSync(electronPkg, "utf8")).version
 const arch = hardwareArch().toLowerCase().replace("aarch64", "arm64");
 log(`Electron ${electronVersion} on ${process.platform}/${arch}`);
 
-const sqliteDir = path.join(root, "node_modules", "better-sqlite3");
-if (!fs.existsSync(sqliteDir)) {
-  log("better-sqlite3 not installed at workspace root; nothing to do.");
-  process.exit(0);
+// Find every better-sqlite3 installation in the workspace. npm sometimes hoists to
+// the root and sometimes leaves a nested copy under packages/<name>/node_modules
+// when peer-dep resolution clashes. We have to rebuild every copy, or whichever
+// one the runtime resolves to will still be the wrong arch.
+function findBetterSqliteCopies(searchRoot) {
+  const out = [];
+  function walk(dir) {
+    if (!fs.existsSync(dir)) return;
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const full = path.join(dir, entry.name);
+      if (entry.name === "better-sqlite3" && fs.existsSync(path.join(full, "package.json"))) {
+        out.push(full);
+      } else if (entry.name === "node_modules") {
+        walk(full);
+      } else if (!entry.name.startsWith(".") && entry.name !== "node_modules") {
+        // Descend into workspaces / packages so we catch packages/core/node_modules
+        // and apps/*/node_modules. Skip third-party dep trees (those are inside
+        // node_modules already and handled by the walk above).
+        if (full.includes("node_modules")) continue;
+        walk(full);
+      }
+    }
+  }
+  walk(searchRoot);
+  return out;
 }
 
-try {
-  execFileSync(
-    "npx",
-    ["prebuild-install", `--target=${electronVersion}`, "--runtime=electron", `--arch=${arch}`, "--verbose"],
-    { cwd: sqliteDir, stdio: "inherit" },
-  );
-  log("Done.");
-} catch (e) {
-  log(`prebuild-install failed: ${e instanceof Error ? e.message : String(e)}`);
-  log("This is usually fine if you're not launching Electron right now (vitest uses the host-Node prebuilt).");
-  log("If you ARE launching Electron, ensure your Node is native arm64 (not Rosetta x64), then re-run.");
+const copies = findBetterSqliteCopies(root);
+if (copies.length === 0) {
+  log("better-sqlite3 not installed anywhere in the workspace; nothing to do.");
+  process.exit(0);
+}
+log(`Found ${copies.length} better-sqlite3 install(s):`);
+for (const c of copies) log(`  ${path.relative(root, c)}`);
+
+let failures = 0;
+for (const sqliteDir of copies) {
+  try {
+    execFileSync(
+      "npx",
+      ["prebuild-install", `--target=${electronVersion}`, "--runtime=electron", `--arch=${arch}`],
+      { cwd: sqliteDir, stdio: "inherit" },
+    );
+    log(`  ✓ ${path.relative(root, sqliteDir)}`);
+  } catch (e) {
+    failures += 1;
+    log(`  ✗ ${path.relative(root, sqliteDir)}: ${e instanceof Error ? e.message : String(e)}`);
+  }
+}
+
+if (failures > 0) {
+  log(`prebuild-install failed for ${failures} copy/copies.`);
+  log("If your Node is x64 under Rosetta, this is expected for non-launch contexts.");
+  log("Launching Electron will work if at least the root copy is arm64.");
   process.exit(0); // don't fail the whole install
 }
+log("Done.");
