@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("rwb", {
   resolveReviewItem: (projectDir: string, reviewId: string, decision: unknown) => ipcRenderer.invoke("rwb:review:resolve", projectDir, reviewId, decision),
   setCredential: (provider: string, value: string) => ipcRenderer.invoke("rwb:credentials:set", provider, value),
   testCredential: (provider: string, value: string) => ipcRenderer.invoke("rwb:credentials:test", provider, value),
+  getCredentialStatus: () => ipcRenderer.invoke("rwb:credentials:status"),
   openProject: () => ipcRenderer.invoke("rwb:project:open"),
   validateProtocol: (protocolPath: string) => ipcRenderer.invoke("rwb:protocol:validate", protocolPath),
   freezeProtocol: (protocolPath: string) => ipcRenderer.invoke("rwb:protocol:freeze", protocolPath),

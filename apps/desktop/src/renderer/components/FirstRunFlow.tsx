@@ -1,17 +1,17 @@
 import { useState } from "react";
-import { Rocket, ArrowRight, Sparkles, KeyRound, Zap, CheckCircle2 } from "lucide-react";
+import { Rocket, ArrowRight, Sparkles, CheckCircle2, Zap } from "lucide-react";
 import { useWorkspace } from "../store/workspace";
 import { TEMPLATES, instantiateTemplate } from "../store/templates";
-import { CredentialsWizard } from "./CredentialsWizard";
 
-type Step = "intro" | "template" | "credentials";
+type Step = "intro" | "template";
 
 export function FirstRunFlow() {
   const [step, setStep] = useState<Step>("intro");
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("full-research-project");
   const addPipelineNode = useWorkspace((s) => s.addPipelineNode);
   const addPipelineEdge = useWorkspace((s) => s.addPipelineEdge);
   const setFirstRunComplete = useWorkspace((s) => s.setFirstRunComplete);
+  const setShowNextSteps = useWorkspace((s) => s.setShowNextSteps);
   const setStatus = useWorkspace((s) => s.setStatus);
 
   function applyTemplate(templateId: string) {
@@ -23,8 +23,15 @@ export function FirstRunFlow() {
     setStatus(`Loaded template: ${template.name}`);
   }
 
-  if (step === "credentials") {
-    return <CredentialsWizard />;
+  function finishWithTemplate(templateId: string) {
+    applyTemplate(templateId);
+    setShowNextSteps(true);
+    setFirstRunComplete(true);
+  }
+
+  function finishBlank() {
+    setShowNextSteps(true);
+    setFirstRunComplete(true);
   }
 
   if (step === "intro") {
@@ -37,28 +44,30 @@ export function FirstRunFlow() {
           </div>
           <p className="introLead">
             Atrium is a desktop workbench for reproducible AI-assisted research pipelines.
-            You compose a pipeline of modules, run it, and ship a bundle that anyone can verify.
+            Compose a pipeline of modules, run it, and share a bundle that anyone can verify.
           </p>
           <div className="introGrid">
             <div className="introCard">
               <Zap size={20} />
-              <strong>Compose</strong>
-              <span>Drag modules. Connect outputs to inputs. Atrium validates the schema for you.</span>
+              <strong>1. Compose</strong>
+              <span>Pick a template or drag modules onto the canvas. Connect outputs to inputs.</span>
             </div>
             <div className="introCard">
               <Sparkles size={20} />
-              <strong>Run</strong>
+              <strong>2. Run</strong>
               <span>LLM calls go through a budgeted proxy. Every artifact is content-hashed.</span>
             </div>
             <div className="introCard">
               <CheckCircle2 size={20} />
-              <strong>Verify</strong>
+              <strong>3. Verify</strong>
               <span>Bundle and share. Reviewers re-run the deterministic path and compare hashes.</span>
             </div>
           </div>
           <div className="wizardActions">
-            <button className="primary" onClick={() => setStep("template")}>Pick a starting template <ArrowRight size={14} /></button>
-            <button onClick={() => setFirstRunComplete(true)}>Skip — start with a blank canvas</button>
+            <button className="primary" onClick={() => setStep("template")}>
+              Pick a starting template <ArrowRight size={14} />
+            </button>
+            <button className="ghost" onClick={finishBlank}>Start with a blank canvas</button>
           </div>
         </div>
       </div>
@@ -71,7 +80,7 @@ export function FirstRunFlow() {
     <div className="wizardOverlay">
       <div className="wizardCard wide templatePicker">
         <h2><Rocket size={20} /> Pick a starting template</h2>
-        <p>Each template populates the canvas with a working pipeline. You can edit anything afterward.</p>
+        <p>Each template populates the canvas with a working pipeline. You can edit anything afterward — including deleting modules you don't need.</p>
 
         <div className="templateLayout">
           <div className="templateList">
@@ -101,10 +110,7 @@ export function FirstRunFlow() {
                 </ol>
                 <button
                   className="primary"
-                  onClick={() => {
-                    applyTemplate(selected.id);
-                    setStep("credentials");
-                  }}
+                  onClick={() => finishWithTemplate(selected.id)}
                 >
                   Use this template <ArrowRight size={14} />
                 </button>
@@ -119,10 +125,7 @@ export function FirstRunFlow() {
 
         <div className="wizardActions">
           <button onClick={() => setStep("intro")}>Back</button>
-          <button onClick={() => setStep("credentials")} className="ghost">
-            <KeyRound size={14} /> Skip to credentials setup
-          </button>
-          <button onClick={() => setFirstRunComplete(true)} className="ghost">Skip setup entirely</button>
+          <button onClick={finishBlank} className="ghost">Skip — start blank</button>
         </div>
       </div>
     </div>

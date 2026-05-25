@@ -58,9 +58,10 @@ export function validateEdge(
     return { valid: false, reason: `Input "${targetPort}" already has a connection` };
   }
 
-  if (sourceOutput.schema !== targetInput.schema) {
-    return { valid: false, reason: `Schema mismatch: "${sourceOutput.schema}" → "${targetInput.schema}"` };
-  }
-
+  // Note: we intentionally do NOT require sourceOutput.schema === targetInput.schema.
+  // Schema filenames are module-local, so equality would forbid valid cross-module
+  // connections (e.g. dedupe's schemas/output.json into screener's schemas/records.json
+  // — both arrays-of-records). The runner performs actual JSON Schema validation
+  // before invoking the consuming module, which catches true incompatibilities.
   return { valid: true };
 }

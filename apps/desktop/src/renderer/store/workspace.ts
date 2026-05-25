@@ -75,6 +75,9 @@ interface WorkspaceState {
   firstRunComplete: boolean;
   bundleImportPath: string | null;
   runProgress: RunProgressState;
+  credentialStatus: { anthropic: boolean; openai: boolean; ollama: boolean };
+  settingsOpen: boolean;
+  showNextSteps: boolean;
 
   setModules: (modules: ModuleManifest[]) => void;
   setProjectDir: (dir: string) => void;
@@ -92,6 +95,9 @@ interface WorkspaceState {
   setBundleImportPath: (path: string | null) => void;
   applyRunProgress: (event: import("../vite-env").RunProgressPayload) => void;
   resetRunProgress: () => void;
+  setCredentialStatus: (status: { anthropic: boolean; openai: boolean; ollama: boolean }) => void;
+  setSettingsOpen: (open: boolean) => void;
+  setShowNextSteps: (show: boolean) => void;
 
   addPipelineNode: (node: PipelineNode) => void;
   removePipelineNode: (id: string) => void;
@@ -120,6 +126,9 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
   firstRunComplete: false,
   bundleImportPath: null,
   runProgress: { active: false, runId: null, totalNodes: 0, completedNodes: 0, byNode: {} },
+  credentialStatus: { anthropic: false, openai: false, ollama: false },
+  settingsOpen: false,
+  showNextSteps: false,
 
   setModules: (modules) => set({ modules }),
   setProjectDir: (projectDir) => set({ projectDir }),
@@ -139,6 +148,9 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
     runProgress: { active: false, runId: null, totalNodes: 0, completedNodes: 0, byNode: {} },
     budget: { totalCalls: 0, totalTokens: 0, totalCostUsd: 0 },
   }),
+  setCredentialStatus: (credentialStatus) => set({ credentialStatus }),
+  setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
+  setShowNextSteps: (showNextSteps) => set({ showNextSteps }),
   applyRunProgress: (event) => set((state) => {
     const next: RunProgressState = { ...state.runProgress, byNode: { ...state.runProgress.byNode } };
     let nextBudget = state.budget;

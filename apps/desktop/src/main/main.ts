@@ -6,6 +6,7 @@ import {
   freezeProtocol,
   generateEnvironmentLock,
   generateMethods,
+  getCredentialStatus,
   importBundle,
   initProject,
   inspectBundleTrust,
@@ -70,6 +71,7 @@ ipcMain.handle("rwb:modules:schema", (_event, moduleId: string, schemaRef: strin
 });
 ipcMain.handle("rwb:credentials:set", (_event, provider: "anthropic" | "ollama" | "openai", value: string) => setCredential(provider, value));
 ipcMain.handle("rwb:credentials:test", (_event, provider: "anthropic" | "ollama" | "openai", value: string) => testCredential(provider, value));
+ipcMain.handle("rwb:credentials:status", () => getCredentialStatus());
 ipcMain.handle("rwb:review:list", (_event, projectDir: string) => listReviewItems(projectDir));
 ipcMain.handle("rwb:review:resolve", (_event, projectDir: string, reviewId: string, decision: unknown) => resolveReviewItem(projectDir, reviewId, decision));
 

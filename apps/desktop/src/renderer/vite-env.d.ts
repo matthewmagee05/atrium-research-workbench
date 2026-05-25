@@ -31,6 +31,7 @@ declare global {
       resolveReviewItem: (projectDir: string, reviewId: string, decision: unknown) => Promise<Record<string, unknown>>;
       setCredential: (provider: "anthropic" | "ollama" | "openai", value: string) => Promise<void>;
       testCredential: (provider: "anthropic" | "ollama" | "openai", value: string) => Promise<CredentialTestPayload>;
+      getCredentialStatus: () => Promise<Record<"anthropic" | "openai" | "ollama", boolean>>;
       openProject: () => Promise<string | null>;
       validateProtocol: (protocolPath: string) => Promise<unknown>;
       freezeProtocol: (protocolPath: string) => Promise<unknown>;

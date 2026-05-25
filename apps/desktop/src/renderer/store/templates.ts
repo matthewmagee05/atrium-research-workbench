@@ -52,51 +52,94 @@ function makeTemplate(
 
 export const TEMPLATES: PipelineTemplate[] = [
   makeTemplate(
-    "systematic-review",
-    "Systematic Review",
+    "full-research-project",
+    "Full Research Project (recommended)",
     {
-      description: "End-to-end PRISMA-style screening pipeline with LLM-assisted inclusion decisions.",
+      description: "End-to-end research pipeline: scope the question, draft hypotheses, preregister, find papers, screen with an LLM, then run bibliometric analysis and a narrative report.",
       steps: [
-        "Fetch records from OpenAlex",
+        "Generate candidate research questions for your topic",
+        "Draft testable hypotheses with variables and assumptions",
+        "Produce an OSF-style preregistration draft for human review",
+        "Fetch records from OpenAlex (start in fixture mode, switch to live later)",
         "Normalize titles, DOIs, authors",
         "Deduplicate by DOI + title + author overlap",
-        "LLM screen each record against inclusion / exclusion criteria",
-        "Extract structured fields from included records",
+        "LLM-screen each record against your inclusion / exclusion criteria",
         "Generate a PRISMA flow diagram",
+        "Run bibliometric statistics over the deduplicated corpus",
+        "Draft a narrative report grounded in the bibliometric summary",
       ],
-      llmCalls: "~1 call per record (screening) + 1 call per included record (extraction)",
-      goodFor: "Literature reviews where you need an auditable inclusion log.",
+      llmCalls: "~1 + 1 + 1 (question / hypothesis / prereg) + 1 per record (screener) + 1 (narrative). Use Ollama locally to avoid cost.",
+      goodFor: "Most research projects. Edit out the stages you don't need by selecting a node and clicking the trash icon.",
     },
     [
-      { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 60, y: 200 } },
-      { moduleId: "record-normalizer", params: {}, position: { x: 300, y: 200 }, from: [{ sourceIndex: 0, sourcePort: "records", targetPort: "records" }] },
-      { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 540, y: 200 }, from: [{ sourceIndex: 1, sourcePort: "normalized", targetPort: "normalized" }] },
-      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7 }, position: { x: 780, y: 140 }, from: [{ sourceIndex: 2, sourcePort: "deduped", targetPort: "records" }] },
-      { moduleId: "prisma-flow", params: {}, position: { x: 780, y: 360 }, from: [{ sourceIndex: 3, sourcePort: "screening_decisions", targetPort: "screening_decisions" }] },
+      // Top row: question → hypothesis → preregistration
+      { moduleId: "question-development", params: { topic: "" }, position: { x: 40, y: 60 } },
+      { moduleId: "hypothesis-drafter", params: { max_hypotheses: 5 }, position: { x: 280, y: 60 }, from: [{ sourceIndex: 0, sourcePort: "questions", targetPort: "questions" }] },
+      { moduleId: "preregistration-generator", params: { template: "osf-standard" }, position: { x: 520, y: 60 }, from: [{ sourceIndex: 1, sourcePort: "hypotheses", targetPort: "hypotheses" }] },
+
+      // Middle row: source → normalize → dedupe → screen → prisma
+      { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 40, y: 320 } },
+      { moduleId: "record-normalizer", params: {}, position: { x: 280, y: 320 }, from: [{ sourceIndex: 3, sourcePort: "records", targetPort: "records" }] },
+      { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 520, y: 320 }, from: [{ sourceIndex: 4, sourcePort: "normalized", targetPort: "normalized" }] },
+      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7 }, position: { x: 760, y: 320 }, from: [{ sourceIndex: 5, sourcePort: "deduped", targetPort: "records" }] },
+      { moduleId: "prisma-flow", params: {}, position: { x: 1000, y: 320 }, from: [{ sourceIndex: 6, sourcePort: "screening_decisions", targetPort: "screening_decisions" }] },
+
+      // Bottom row: bibliometric + narrative
+      {
+        moduleId: "bibliometrix-r",
+        params: { analyses: ["annual_publications", "venue_publications", "author_publications"], use_bibliometrix_package: false },
+        position: { x: 760, y: 580 },
+        from: [
+          { sourceIndex: 5, sourcePort: "deduped", targetPort: "deduped" },
+          { sourceIndex: 5, sourcePort: "corpus_lock", targetPort: "corpus_lock" },
+        ],
+      },
+      { moduleId: "narrative-drafter", params: {}, position: { x: 1000, y: 580 }, from: [{ sourceIndex: 8, sourcePort: "summary", targetPort: "summary" }] },
+    ],
+  ),
+  makeTemplate(
+    "systematic-review",
+    "Systematic Review (screening only)",
+    {
+      description: "Inclusion / exclusion screening with PRISMA. Skip the question and hypothesis stages — bring your criteria.",
+      steps: [
+        "Fetch records from OpenAlex",
+        "Normalize and deduplicate",
+        "LLM-screen against inclusion / exclusion criteria",
+        "Generate a PRISMA flow diagram",
+      ],
+      llmCalls: "~1 LLM call per record (screener).",
+      goodFor: "Lit reviews where the criteria are already nailed down.",
+    },
+    [
+      { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 40, y: 120 } },
+      { moduleId: "record-normalizer", params: {}, position: { x: 280, y: 120 }, from: [{ sourceIndex: 0, sourcePort: "records", targetPort: "records" }] },
+      { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 520, y: 120 }, from: [{ sourceIndex: 1, sourcePort: "normalized", targetPort: "normalized" }] },
+      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7 }, position: { x: 760, y: 120 }, from: [{ sourceIndex: 2, sourcePort: "deduped", targetPort: "records" }] },
+      { moduleId: "prisma-flow", params: {}, position: { x: 1000, y: 120 }, from: [{ sourceIndex: 3, sourcePort: "screening_decisions", targetPort: "screening_decisions" }] },
     ],
   ),
   makeTemplate(
     "bibliometric-analysis",
-    "Bibliometric Analysis",
+    "Bibliometric Analysis (stats only)",
     {
-      description: "Quantitative analysis of a paper corpus: yearly trends, top venues, co-authorship, citations.",
+      description: "Quantitative analysis of a paper corpus: yearly trends, top venues, co-authorship, citations. No LLM calls.",
       steps: [
         "Fetch records from OpenAlex",
         "Normalize and deduplicate",
-        "Run bibliometric statistics in R (annual publications, venues, authors, co-authorship, growth rate)",
-        "Output summary statistics, tables, and figure specifications",
+        "Run bibliometric statistics in R",
       ],
-      llmCalls: "Zero LLM calls — purely deterministic statistics.",
-      goodFor: "Survey papers, field-mapping studies, and citation-trend analysis.",
+      llmCalls: "Zero. Fully deterministic.",
+      goodFor: "Field-mapping studies, citation-trend analysis, and when no LLM budget is available.",
     },
     [
-      { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 60, y: 200 } },
-      { moduleId: "record-normalizer", params: {}, position: { x: 300, y: 200 }, from: [{ sourceIndex: 0, sourcePort: "records", targetPort: "records" }] },
-      { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 540, y: 200 }, from: [{ sourceIndex: 1, sourcePort: "normalized", targetPort: "normalized" }] },
+      { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 40, y: 120 } },
+      { moduleId: "record-normalizer", params: {}, position: { x: 280, y: 120 }, from: [{ sourceIndex: 0, sourcePort: "records", targetPort: "records" }] },
+      { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 520, y: 120 }, from: [{ sourceIndex: 1, sourcePort: "normalized", targetPort: "normalized" }] },
       {
         moduleId: "bibliometrix-r",
         params: { analyses: ["annual_publications", "venue_publications", "author_publications"], use_bibliometrix_package: false },
-        position: { x: 780, y: 200 },
+        position: { x: 760, y: 120 },
         from: [
           { sourceIndex: 2, sourcePort: "deduped", targetPort: "deduped" },
           { sourceIndex: 2, sourcePort: "corpus_lock", targetPort: "corpus_lock" },
@@ -104,31 +147,12 @@ export const TEMPLATES: PipelineTemplate[] = [
       },
     ],
   ),
-  makeTemplate(
-    "hypothesis-driven",
-    "Hypothesis-Driven Research",
-    {
-      description: "Generate questions, draft hypotheses, and produce a preregistration draft.",
-      steps: [
-        "Generate candidate research questions for a topic",
-        "Draft testable hypotheses with variables and assumptions",
-        "Produce an OSF-style preregistration draft for human review",
-      ],
-      llmCalls: "Roughly 3 LLM calls (one per stage).",
-      goodFor: "Project scoping and preregistration. Every output is flagged for human review.",
-    },
-    [
-      { moduleId: "question-development", params: { topic: "" }, position: { x: 60, y: 200 } },
-      { moduleId: "hypothesis-drafter", params: { max_hypotheses: 5 }, position: { x: 360, y: 200 }, from: [{ sourceIndex: 0, sourcePort: "questions", targetPort: "questions" }] },
-      { moduleId: "preregistration-generator", params: { template: "osf-standard" }, position: { x: 660, y: 200 }, from: [{ sourceIndex: 1, sourcePort: "hypotheses", targetPort: "hypotheses" }] },
-    ],
-  ),
   {
     id: "blank",
     name: "Blank Canvas",
-    description: "Start with an empty canvas. Drag modules from the library or hit Cmd-K (coming soon) to search.",
-    steps: ["You decide the steps."],
-    llmCalls: "Depends on what you build.",
+    description: "Start empty. Drag modules from the library on the left.",
+    steps: ["You decide what to build."],
+    llmCalls: "Depends on what you add.",
     goodFor: "Custom pipelines that don't match a template.",
     nodes: [],
     edges: [],

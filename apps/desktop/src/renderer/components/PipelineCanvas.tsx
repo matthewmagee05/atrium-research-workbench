@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -30,6 +30,17 @@ export function PipelineCanvas() {
   const setSelectedNodeId = useWorkspace((s) => s.setSelectedNodeId);
   const setStatus = useWorkspace((s) => s.setStatus);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
+  const lastNodeCount = useRef(0);
+
+  useEffect(() => {
+    if (!reactFlowInstance.current) return;
+    if (pipelineNodes.length > 0 && pipelineNodes.length !== lastNodeCount.current) {
+      requestAnimationFrame(() => {
+        reactFlowInstance.current?.fitView({ padding: 0.2, duration: 400 });
+      });
+    }
+    lastNodeCount.current = pipelineNodes.length;
+  }, [pipelineNodes.length]);
 
   const rfNodes: Node[] = useMemo(
     () =>

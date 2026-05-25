@@ -4,7 +4,7 @@ import { diffArtifacts } from "./artifacts/diff";
 import { exportBundle, importBundle, inspectBundleTrust, replayBundle, verifyBundle } from "./bundle/bundle";
 import { assertBudgetAvailable } from "./budget/budget";
 import { validateClaimGrounding } from "./claim-grounding/validator";
-import { getCredential, scrubSecrets, setCredential, testCredential } from "./credentials/credentials";
+import { getCredential, getCredentialStatus, scrubSecrets, setCredential, testCredential } from "./credentials/credentials";
 import { generateEnvironmentLock } from "./environment-lock/environment-lock";
 import { addJournalEntry } from "./journal/journal";
 import { generateMethods } from "./methods-generator/methods";
@@ -37,6 +37,7 @@ export {
   generateEnvironmentLock,
   generateMethods,
   getCredential,
+  getCredentialStatus,
   importBundle,
   initProject,
   inspectBundleTrust,

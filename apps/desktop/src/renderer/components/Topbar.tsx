@@ -1,5 +1,8 @@
-import { useState } from "react";
-import { FileArchive, FileCheck, FolderOpen, Play, ShieldCheck, Download, ShieldAlert, GitCompare } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  FileArchive, FileCheck, FolderOpen, Play, ShieldCheck, Download, ShieldAlert,
+  GitCompare, Settings as SettingsIcon, KeyRound, AlertTriangle,
+} from "lucide-react";
 import { useWorkspace, type RunMode } from "../store/workspace";
 import { BundleDialog } from "./BundleDialog";
 
@@ -23,7 +26,19 @@ export function Topbar() {
   const setLastRun = useWorkspace((s) => s.setLastRun);
   const setBudget = useWorkspace((s) => s.setBudget);
   const resetRunProgress = useWorkspace((s) => s.resetRunProgress);
+  const credentialStatus = useWorkspace((s) => s.credentialStatus);
+  const setCredentialStatus = useWorkspace((s) => s.setCredentialStatus);
+  const setSettingsOpen = useWorkspace((s) => s.setSettingsOpen);
   const [dialogMode, setDialogMode] = useState<"import" | "verify" | "diff" | null>(null);
+
+  useEffect(() => {
+    if (!api?.getCredentialStatus) return;
+    api.getCredentialStatus().then(setCredentialStatus).catch(() => undefined);
+  }, [setCredentialStatus]);
+
+  const configuredProviders = (Object.entries(credentialStatus) as Array<["anthropic" | "openai" | "ollama", boolean]>)
+    .filter(([, v]) => v)
+    .map(([k]) => k);
 
   async function openProject() {
     if (!api) return;
@@ -72,7 +87,7 @@ export function Topbar() {
       <div className="brand">
         <ShieldCheck size={20} />
         <strong>Atrium</strong>
-        <span>{projectDir || "No project open"}</span>
+        <span className="brandProject">{projectDir || "No project open"}</span>
       </div>
       <div className="mode">
         {MODES.map((m) => (
@@ -82,9 +97,23 @@ export function Topbar() {
         ))}
       </div>
       <div className="actions">
+        <button
+          className={`credentialsIndicator ${configuredProviders.length === 0 ? "warn" : ""}`}
+          onClick={() => setSettingsOpen(true)}
+          title={configuredProviders.length === 0
+            ? "No API credentials configured — click to set up"
+            : `Configured: ${configuredProviders.join(", ")}`}
+        >
+          {configuredProviders.length === 0
+            ? <><AlertTriangle size={14} /> Set up credentials</>
+            : <><KeyRound size={14} /> {configuredProviders.length} configured</>}
+        </button>
+        <button title="Settings" onClick={() => setSettingsOpen(true)}><SettingsIcon size={18} /></button>
+        <span className="actionDivider" />
         <button title="Open project" onClick={openProject}><FolderOpen size={18} /></button>
         <button title="Freeze protocol" onClick={freezeProtocol} disabled={!protocolPath}><FileCheck size={18} /></button>
-        <button title="Run" onClick={runProtocol} disabled={!protocolPath}><Play size={18} /></button>
+        <button title="Run" onClick={runProtocol} disabled={!protocolPath} className="runBtn"><Play size={18} /></button>
+        <span className="actionDivider" />
         <button title="Export bundle" onClick={exportBundle} disabled={!projectDir}><FileArchive size={18} /></button>
         <button title="Import bundle" onClick={() => setDialogMode("import")}><Download size={18} /></button>
         <button title="Verify bundle" onClick={() => setDialogMode("verify")}><ShieldAlert size={18} /></button>

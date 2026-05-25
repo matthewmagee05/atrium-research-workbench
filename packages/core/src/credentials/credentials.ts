@@ -25,6 +25,15 @@ export async function setCredential(provider: CredentialProvider, value: string)
   }
 }
 
+export async function getCredentialStatus(): Promise<Record<CredentialProvider, boolean>> {
+  const result: Record<CredentialProvider, boolean> = { anthropic: false, openai: false, ollama: false };
+  for (const provider of ["anthropic", "openai", "ollama"] as CredentialProvider[]) {
+    const value = await getCredential(provider);
+    result[provider] = Boolean(value && value.length > 0);
+  }
+  return result;
+}
+
 export interface CredentialTestResult {
   ok: boolean;
   status?: number;
