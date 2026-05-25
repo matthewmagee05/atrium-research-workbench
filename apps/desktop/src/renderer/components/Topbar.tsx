@@ -6,6 +6,7 @@ import {
 import { useWorkspace, type RunMode } from "../store/workspace";
 import { BundleDialog } from "./BundleDialog";
 import { serializePipelineToProtocol } from "../lib/serialize-protocol";
+import { validatePipeline, type ValidationIssue } from "../lib/validate-pipeline";
 
 const api = window.rwb;
 
@@ -33,9 +34,11 @@ export function Topbar() {
   const pipelineNodes = useWorkspace((s) => s.pipelineNodes);
   const pipelineEdges = useWorkspace((s) => s.pipelineEdges);
   const modules = useWorkspace((s) => s.modules);
+  const setSelectedNodeId = useWorkspace((s) => s.setSelectedNodeId);
   const [dialogMode, setDialogMode] = useState<"import" | "verify" | "diff" | null>(null);
   const [runBusy, setRunBusy] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [validationIssues, setValidationIssues] = useState<ValidationIssue[]>([]);
 
   useEffect(() => {
     if (!api?.getCredentialStatus) return;
@@ -103,9 +106,20 @@ export function Topbar() {
       return;
     }
     setLastError(null);
+    setValidationIssues([]);
     setRunBusy(true);
     resetRunProgress();
     try {
+      setStatus("Validating pipeline…");
+      const loader = api?.loadModuleSchema ?? (async () => ({}));
+      const validation = await validatePipeline(pipelineNodes, pipelineEdges, modules, loader);
+      if (!validation.valid) {
+        setValidationIssues(validation.issues);
+        setLastError(`Cannot run yet — ${validation.issues.length} issue(s) found. See list below.`);
+        setStatus("Pipeline has unresolved issues.");
+        setRunBusy(false);
+        return;
+      }
       setStatus("Saving + running pipeline…");
       const serialized = serializePipelineToProtocol(pipelineNodes, pipelineEdges, modules, {
         projectName: projectDir.split(/[/\\]/).filter(Boolean).pop() ?? "Atrium Project",
@@ -190,10 +204,36 @@ export function Topbar() {
         <button title="Diff artifacts" onClick={() => setDialogMode("diff")} disabled={!projectDir}><GitCompare size={18} /></button>
       </div>
       {dialogMode && <BundleDialog mode={dialogMode} onClose={() => setDialogMode(null)} />}
-      {lastError && (
-        <div className="topbarError" onClick={() => setLastError(null)} title="Click to dismiss">
-          <AlertTriangle size={14} />
-          <span>{lastError}</span>
+      {(lastError || validationIssues.length > 0) && (
+        <div className="topbarError">
+          <div className="topbarErrorHeader">
+            <AlertTriangle size={14} />
+            <span>{lastError ?? "Pipeline has issues"}</span>
+            <button
+              className="topbarErrorDismiss"
+              onClick={() => { setLastError(null); setValidationIssues([]); }}
+              title="Dismiss"
+            >×</button>
+          </div>
+          {validationIssues.length > 0 && (
+            <ul className="topbarErrorList">
+              {validationIssues.map((issue, i) => (
+                <li key={i}>
+                  <button
+                    className="topbarErrorIssue"
+                    onClick={() => {
+                      if (issue.nodeId) setSelectedNodeId(issue.nodeId);
+                    }}
+                    title="Click to select this node"
+                  >
+                    <strong>{issue.nodeName}</strong>
+                    {issue.field && <code>{issue.field}</code>}
+                    <span>{issue.message}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </header>
