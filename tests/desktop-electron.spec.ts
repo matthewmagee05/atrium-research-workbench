@@ -136,19 +136,6 @@ test.describe("Atrium Electron main-process E2E", () => {
   });
 
   test("rwb:run accepts a live pipeline payload, writes protocol.yaml, freezes, and runs", async () => {
-    // Skip when better-sqlite3 native module isn't loadable for this Electron's
-    // ABI (e.g. local dev on Apple Silicon with Rosetta-Node — prebuilts are x86_64).
-    // CI on Linux has matching prebuilts and runs the full path.
-    const nativeOk = await app.evaluate(async () => {
-      try {
-        // @ts-expect-error testing dynamic require in main
-        require("better-sqlite3");
-        return true;
-      } catch {
-        return false;
-      }
-    });
-    test.skip(!nativeOk, "better-sqlite3 native module mismatch for this Electron ABI; run via CI or rebuild natively for arm64");
 
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-e2e-run-"));
     const protocolPath = path.join(dir, "protocol.yaml");
