@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["decisions"],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "recommendation", "confidence", "rationale", "requires_review"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "recommendation": {"type": "string", "enum": ["include", "exclude", "uncertain"]},
+          "confidence": {"type": "number"},
+          "rationale": {"type": "string"},
+          "requires_review": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,117 @@
+[
+  {
+    "id": "https://openalex.org/W1",
+    "doi": "https://doi.org/10.1000/alpha",
+    "title": "Auditable Artificial Intelligence in Research Workflows",
+    "publication_year": 2021,
+    "publication_date": "2021-04-12",
+    "authorships": [
+      {"author": {"display_name": "Avery Stone"}},
+      {"author": {"display_name": "Morgan Lee"}}
+    ],
+    "primary_location": {"source": {"display_name": "Journal of Research Systems"}}
+  },
+  {
+    "id": "https://openalex.org/W2",
+    "doi": "10.1000/BETA",
+    "title": "Reproducible Literature Pipelines for Applied Science",
+    "publication_year": 2022,
+    "publication_date": "2022-08-03",
+    "authorships": [
+      {"author": {"display_name": "Sam Rivera"}}
+    ],
+    "primary_location": {"source": {"display_name": "Computational Methods Quarterly"}}
+  },
+  {
+    "id": "https://openalex.org/W3",
+    "doi": null,
+    "title": "Human Review in Machine-Assisted Evidence Synthesis",
+    "publication_year": 2023,
+    "publication_date": "2023-02-19",
+    "authorships": [
+      {"author": {"display_name": "Priya Nair"}},
+      {"author": {"display_name": "Avery Stone"}}
+    ],
+    "primary_location": {"source": {"display_name": "Evidence Automation Review"}}
+  },
+  {
+    "id": "https://openalex.org/W4",
+    "doi": "https://doi.org/10.1000/gamma",
+    "title": "Content Addressing for Scientific Artifacts",
+    "publication_year": 2021,
+    "publication_date": "2021-11-05",
+    "authorships": [
+      {"author": {"display_name": "Lin Chen"}}
+    ],
+    "primary_location": {"source": {"display_name": "Journal of Research Systems"}}
+  },
+  {
+    "id": "https://openalex.org/W5",
+    "doi": "10.1000/delta",
+    "title": "Descriptive Summaries of Bibliographic Corpora",
+    "publication_year": 2020,
+    "publication_date": "2020-01-27",
+    "authorships": [
+      {"author": {"display_name": "Morgan Lee"}},
+      {"author": {"display_name": "Noor Patel"}}
+    ],
+    "primary_location": {"source": {"display_name": "Computational Methods Quarterly"}}
+  },
+  {
+    "id": "https://openalex.org/W6",
+    "doi": "",
+    "title": "Protocol Freezing in Collaborative Research",
+    "publication_year": 2024,
+    "publication_date": "2024-06-15",
+    "authorships": [
+      {"author": {"display_name": "Elena Garcia"}}
+    ],
+    "primary_location": {"source": {"display_name": "Open Science Engineering"}}
+  },
+  {
+    "id": "https://openalex.org/W7",
+    "doi": "https://doi.org/10.1000/epsilon",
+    "title": "Network Isolation as a Reproducibility Test",
+    "publication_year": 2024,
+    "publication_date": "2024-09-09",
+    "authorships": [
+      {"author": {"display_name": "Sam Rivera"}},
+      {"author": {"display_name": "Lin Chen"}}
+    ],
+    "primary_location": {"source": {"display_name": "Open Science Engineering"}}
+  },
+  {
+    "id": "https://openalex.org/W8",
+    "doi": "10.1000/zeta",
+    "title": "Audit Logs for Local Research Software",
+    "publication_year": 2022,
+    "publication_date": "2022-12-01",
+    "authorships": [
+      {"author": {"display_name": "Noor Patel"}}
+    ],
+    "primary_location": {"source": {"display_name": "Evidence Automation Review"}}
+  },
+  {
+    "id": "https://openalex.org/W9",
+    "doi": null,
+    "title": "Typed Module Contracts for Research Pipelines",
+    "publication_year": 2023,
+    "publication_date": "2023-07-21",
+    "authorships": [
+      {"author": {"display_name": "Avery Stone"}},
+      {"author": {"display_name": "Elena Garcia"}}
+    ],
+    "primary_location": {"source": {"display_name": "Journal of Research Systems"}}
+  },
+  {
+    "id": "https://openalex.org/W10",
+    "doi": "https://doi.org/10.1000/eta",
+    "title": "Replay-First Peer Review Bundles",
+    "publication_year": 2025,
+    "publication_date": "2025-03-30",
+    "authorships": [
+      {"author": {"display_name": "Priya Nair"}}
+    ],
+    "primary_location": {"source": {"display_name": "Open Science Engineering"}}
+  }
+]

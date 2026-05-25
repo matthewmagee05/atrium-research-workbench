@@ -1,0 +1,41 @@
+id: reproducibility-bundle
+version: 1.0.0
+name: Reproducibility Bundle
+description: Documents the bundle-export stage exposed by the Tier 0 CLI.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs: []
+outputs:
+  - name: bundle_summary
+    schema: schemas/output.json
+    description: Bundle summary placeholder.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget:
+    max_tokens_per_run: 0
+    max_calls_per_run: 0
+    max_cost_usd_per_run: 0
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Bundle export is implemented by the core CLI in Tier 0.
+  variance_sources: []
+  reproduction_metrics:
+    - schema_validity
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

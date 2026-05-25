@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["identified", "screened", "included", "excluded", "uncertain"],
+  "properties": {
+    "identified": {"type": "integer"},
+    "screened": {"type": "integer"},
+    "included": {"type": "integer"},
+    "excluded": {"type": "integer"},
+    "uncertain": {"type": "integer"}
+  },
+  "additionalProperties": false
+}

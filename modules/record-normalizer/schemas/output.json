@@ -1,0 +1,18 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["record_id", "source_id", "doi", "title", "publication_year", "publication_date", "authors", "venue"],
+    "properties": {
+      "record_id": {"type": "string"},
+      "source_id": {"type": "string"},
+      "doi": {"type": ["string", "null"]},
+      "title": {"type": "string"},
+      "publication_year": {"type": ["integer", "null"]},
+      "publication_date": {"type": ["string", "null"]},
+      "authors": {"type": "array", "items": {"type": "string"}},
+      "venue": {"type": ["string", "null"]}
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "max_hypotheses": {"type": "integer", "minimum": 1, "maximum": 20},
+    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
+    "model": {"type": "string"}
+  },
+  "additionalProperties": false
+}

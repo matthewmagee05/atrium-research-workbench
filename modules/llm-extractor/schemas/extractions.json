@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "required": ["rows"],
+  "properties": {
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "fields", "requires_review"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "fields": {"type": "object"},
+          "requires_review": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "required": ["final_record_count"],
+  "properties": {
+    "final_record_count": {"type": "integer"}
+  },
+  "additionalProperties": true
+}

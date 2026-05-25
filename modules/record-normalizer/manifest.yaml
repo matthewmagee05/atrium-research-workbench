@@ -1,0 +1,45 @@
+id: record-normalizer
+version: 1.0.0
+name: Record Normalizer
+description: Normalizes OpenAlex-shaped records for downstream analysis.
+stage: normalize
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: records
+    schema: schemas/input.json
+    optional: false
+outputs:
+  - name: normalized
+    schema: schemas/output.json
+    description: Normalized bibliographic records.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget:
+    max_tokens_per_run: 0
+    max_calls_per_run: 0
+    max_cost_usd_per_run: 0
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Pure normalization over canonical input records.
+  variance_sources: []
+  reproduction_metrics:
+    - schema_validity
+    - row_count_agreement
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

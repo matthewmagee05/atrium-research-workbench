@@ -1,0 +1,46 @@
+id: llm-extractor
+version: 0.1.0
+name: LLM Extractor
+description: Tier 2 contract for bounded LLM-assisted structured extraction.
+stage: extract
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: included_records
+    schema: schemas/records.json
+    optional: false
+outputs:
+  - name: extractions
+    schema: schemas/extractions.json
+    description: Structured extraction table.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: true
+  budget:
+    max_tokens_per_run: 150000
+    max_calls_per_run: 1000
+    max_cost_usd_per_run: 15
+  prompts:
+    - id: extraction_v1
+      path: prompts/extraction.md
+      version: 1.0.0
+determinism:
+  level: replayable
+  guarantee: Original extractions are canonical recommendations pending human adjudication.
+  variance_sources: [model_version, sampling]
+  reproduction_metrics: [schema_validity, field_agreement_rate]
+human_in_the_loop:
+  enabled: true
+  triggers: [low_confidence, explicit_review_flag]
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

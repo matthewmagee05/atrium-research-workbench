@@ -1,0 +1,17 @@
+{
+  "type": "object",
+  "required": ["corpus_id", "produced_by", "produced_at", "included_record_ids", "excluded_record_ids", "final_record_count"],
+  "properties": {
+    "corpus_id": {"type": "string"},
+    "produced_by": {"type": "object"},
+    "produced_at": {"type": "string"},
+    "source_provenance": {"type": "array"},
+    "normalization": {"type": "object"},
+    "dedup_decisions": {"type": "object"},
+    "included_record_ids": {"type": "array", "items": {"type": "string"}},
+    "excluded_record_ids": {"type": "array", "items": {"type": "string"}},
+    "exclusion_reasons": {"type": "object"},
+    "final_record_count": {"type": "integer"}
+  },
+  "additionalProperties": false
+}

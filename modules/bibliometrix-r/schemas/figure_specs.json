@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "additionalProperties": {
+    "type": "object",
+    "required": ["kind", "title", "data"],
+    "properties": {
+      "kind": {"type": "string"},
+      "title": {"type": "string"},
+      "x": {"type": "string"},
+      "y": {"type": "string"},
+      "data": {"type": "array"}
+    },
+    "additionalProperties": true
+  }
+}

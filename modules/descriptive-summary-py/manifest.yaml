@@ -1,0 +1,45 @@
+id: descriptive-summary-py
+version: 1.0.0
+name: Descriptive Summary
+description: Summarizes counts, distributions, and missingness for normalized records.
+stage: analyze
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: normalized
+    schema: schemas/input.json
+    optional: false
+outputs:
+  - name: summary
+    schema: schemas/output.json
+    description: Descriptive summary JSON.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget:
+    max_tokens_per_run: 0
+    max_calls_per_run: 0
+    max_cost_usd_per_run: 0
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Pure descriptive statistics over normalized records.
+  variance_sources: []
+  reproduction_metrics:
+    - schema_validity
+    - row_count_agreement
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

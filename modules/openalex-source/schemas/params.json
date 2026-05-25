@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "required": ["source_mode"],
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"]},
+    "fixture_id": {"type": "string"},
+    "query": {"type": "string"},
+    "filters": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
+    "max_records": {"type": "integer", "minimum": 1, "maximum": 200},
+    "snapshot_path": {"type": "string"}
+  },
+  "additionalProperties": false
+}

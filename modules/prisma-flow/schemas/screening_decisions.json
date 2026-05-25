@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "required": ["decisions"],
+  "properties": {
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["recommendation"],
+        "properties": {
+          "recommendation": {"type": "string", "enum": ["include", "exclude", "uncertain"]}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

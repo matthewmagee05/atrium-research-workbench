@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["fixture_id"],
+  "properties": {
+    "fixture_id": {"type": "string", "minLength": 1}
+  }
+}

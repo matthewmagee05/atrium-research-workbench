@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["records_total", "summary_fields", "fields"],
+  "properties": {
+    "records_total": {"type": "integer"},
+    "summary_fields": {"type": "array", "items": {"type": "string"}},
+    "fields": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["missing", "present", "distribution"],
+        "properties": {
+          "missing": {"type": "integer"},
+          "present": {"type": "integer"},
+          "distribution": {"type": "object", "additionalProperties": {"type": "integer"}}
+        }
+      }
+    }
+  }
+}

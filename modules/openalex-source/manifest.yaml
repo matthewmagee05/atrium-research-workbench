@@ -1,0 +1,44 @@
+id: openalex-source
+version: 1.0.0
+name: OpenAlex Source
+description: Retrieves OpenAlex works from a fixture, snapshot, or archived live API call.
+stage: source
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs: []
+outputs:
+  - name: records
+    schema: schemas/output.json
+    description: OpenAlex-shaped records.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget:
+    max_tokens_per_run: 0
+    max_calls_per_run: 0
+    max_cost_usd_per_run: 0
+  prompts: []
+determinism:
+  level: volatile
+  guarantee: Fixture and snapshot modes are deterministic; live_archived archives raw API response.
+  variance_sources:
+    - external_api_state
+  reproduction_metrics:
+    - schema_validity
+    - row_count_agreement
+side_effects:
+  network: true
+  network_domains:
+    - api.openalex.org
+  filesystem_write: true
+  external_processes: false
+human_in_the_loop:
+  enabled: false
+  triggers: []
+author: Research Workbench
+license: MIT
+documentation_url: https://developers.openalex.org/api-reference/introduction

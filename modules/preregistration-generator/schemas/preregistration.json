@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["markdown", "requires_review"],
+  "properties": {
+    "markdown": {"type": "string"},
+    "requires_review": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}

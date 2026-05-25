@@ -1,0 +1,87 @@
+protocol_version: "1.0"
+project:
+  id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  name: "Minimal Bibliometric Study"
+  description: "OpenAlex fixture to normalization, dedupe, and R analysis."
+  created_at: "2026-05-25T00:00:00.000Z"
+  created_by: "Research Workbench"
+frozen:
+  is_frozen: false
+budget:
+  max_llm_calls_per_run: 0
+  max_tokens_per_run: 0
+  max_cost_usd_per_run: 0
+  require_confirmation_above_usd: 0
+  stop_on_budget_exceeded: true
+reproduction_policy:
+  default_mode: "replay"
+  on_volatile_stage:
+    rerun_warning: true
+  on_replayable_stage:
+    enable_variance_audit: false
+  human_decisions:
+    replay_by_default: true
+    rerun_behavior: "treat_as_suggestions"
+nodes:
+  - id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+    name: "OpenAlex Fixture"
+    module:
+      id: "openalex-source"
+      version: "1.0.0"
+    params:
+      source_mode: "fixture"
+      fixture_id: "tiny-corpus"
+  - id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+    name: "Normalize Records"
+    module:
+      id: "record-normalizer"
+      version: "1.0.0"
+    params: {}
+  - id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+    name: "Deduplicate"
+    module:
+      id: "deterministic-dedupe"
+      version: "1.0.0"
+    params:
+      doi_match: true
+      title_similarity_threshold: 0.95
+      author_overlap_threshold: 0.5
+  - id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+    name: "Bibliometric Analysis"
+    module:
+      id: "bibliometrix-r"
+      version: "1.0.0"
+    params:
+      analyses:
+        - "annual_publications"
+        - "venue_publications"
+        - "author_publications"
+edges:
+  - from: {node_id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", port: "records"}
+    to: {node_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", port: "records"}
+  - from: {node_id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", port: "normalized"}
+    to: {node_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", port: "normalized"}
+  - from: {node_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", port: "deduped"}
+    to: {node_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", port: "deduped"}
+  - from: {node_id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", port: "corpus_lock"}
+    to: {node_id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", port: "corpus_lock"}
+narrative_journal_ref: "journal.md"
+environment:
+  workbench_version: "0.0.0-tier1a"
+  required_modules:
+    - id: "openalex-source"
+      version: "1.0.0"
+      manifest_hash: ""
+    - id: "record-normalizer"
+      version: "1.0.0"
+      manifest_hash: ""
+    - id: "deterministic-dedupe"
+      version: "1.0.0"
+      manifest_hash: ""
+    - id: "bibliometrix-r"
+      version: "1.0.0"
+      manifest_hash: ""
+  required_runtimes:
+    python: ">=3.11"
+    r: ">=4.3"
+    node: ">=20"

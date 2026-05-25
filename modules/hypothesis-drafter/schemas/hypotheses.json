@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "required": ["hypotheses"],
+  "properties": {
+    "hypotheses": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["text", "variables", "assumptions", "requires_review"],
+        "properties": {
+          "text": {"type": "string"},
+          "variables": {"type": "array", "items": {"type": "string"}},
+          "assumptions": {"type": "array", "items": {"type": "string"}},
+          "requires_review": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

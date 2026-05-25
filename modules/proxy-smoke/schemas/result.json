@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "required": ["ok", "review_id"],
+  "properties": {
+    "ok": {"type": "boolean"},
+    "review_id": {"type": "string"}
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,20 @@
+{
+  "nodes": {
+    "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb": {
+      "records": "sha256:7532929d7e05bb73987b3aeaab5b77d24c20218ffa44368592385db4783c5196"
+    },
+    "cccccccc-cccc-4ccc-8ccc-cccccccccccc": {
+      "normalized": "sha256:76de511e67b60d889a966fce07356b59b984f619f0a9b900de8722c617c620f7"
+    },
+    "dddddddd-dddd-4ddd-8ddd-dddddddddddd": {
+      "deduped": "sha256:798f7dbde3e673b28bfd3f94dfda3c72c8ed19bf738257787818bbb8826331e4",
+      "corpus_lock": "sha256:c52a3efd2cffade0a44a52949ea3cd144f9f50f6c7c694c94277102466f633cf"
+    },
+    "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee": {
+      "summary": "sha256:953a973b4c2545076fb30eb9a18710f14782be19fc38795b249033d2368007c3",
+      "tables": "sha256:93bbeed36afb2a5653176d35ef2c426fd4303019cbf3e3bf7bea01e9143ec653",
+      "figure_specs": "sha256:cbb7044203bfd7d26dc631644ecd0c0fc439159931e716fd3ea0bfbee5c2c600",
+      "rendered_figures": "sha256:cbb7044203bfd7d26dc631644ecd0c0fc439159931e716fd3ea0bfbee5c2c600"
+    }
+  }
+}

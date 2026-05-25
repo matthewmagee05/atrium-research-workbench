@@ -1,0 +1,83 @@
+{
+  "name": "@research-workbench/desktop",
+  "version": "0.0.0-tier1b",
+  "private": true,
+  "main": "dist/main/main.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.main.json && vite build",
+    "typecheck": "tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.renderer.json --noEmit",
+    "dev": "vite --host 127.0.0.1",
+    "electron": "electron .",
+    "package": "npm run build && electron-builder",
+    "package:mac": "npm run build && electron-builder --mac",
+    "package:linux": "npm run build && electron-builder --linux",
+    "package:win": "npm run build && electron-builder --win"
+  },
+  "build": {
+    "appId": "com.atrium.research-workbench",
+    "productName": "Atrium",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json",
+      {
+        "from": "../../modules",
+        "to": "modules"
+      },
+      {
+        "from": "../../fixtures",
+        "to": "fixtures"
+      }
+    ],
+    "extraMetadata": {
+      "main": "dist/main/main.js"
+    },
+    "mac": {
+      "category": "public.app-category.education",
+      "target": [
+        {"target": "dmg", "arch": ["x64", "arm64"]}
+      ],
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false
+    },
+    "linux": {
+      "category": "Science",
+      "target": [
+        {"target": "AppImage", "arch": ["x64"]},
+        {"target": "deb", "arch": ["x64"]}
+      ]
+    },
+    "win": {
+      "target": [
+        {"target": "nsis", "arch": ["x64"]}
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": null
+  },
+  "dependencies": {
+    "@research-workbench/core": "file:../../packages/core",
+    "@rjsf/core": "^6.0.1",
+    "@rjsf/validator-ajv8": "^6.0.1",
+    "electron": "^42.2.0",
+    "keytar": "^7.9.0",
+    "lucide-react": "^0.511.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "reactflow": "^11.11.4",
+    "zustand": "^5.0.5"
+  },
+  "devDependencies": {
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.5.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.3.5"
+  }
+}

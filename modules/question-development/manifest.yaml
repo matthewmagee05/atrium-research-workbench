@@ -1,0 +1,31 @@
+id: question-development
+version: 0.1.0
+name: Question Development
+description: Tier 4 contract for bounded research-question development.
+stage: question
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs: []
+outputs:
+  - name: questions
+    schema: schemas/questions.json
+    description: Candidate research questions.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: true
+  budget: {max_tokens_per_run: 20000, max_calls_per_run: 10, max_cost_usd_per_run: 3}
+  prompts: [{id: question_development_v1, path: prompts/question_development.md, version: 1.0.0}]
+determinism:
+  level: replayable
+  guarantee: Candidate questions are recommendations requiring human decision.
+  variance_sources: [model_version, sampling]
+  reproduction_metrics: [schema_validity]
+human_in_the_loop: {enabled: true, triggers: [explicit_review_flag]}
+side_effects: {network: false, network_domains: [], filesystem_write: true, external_processes: false}
+author: Research Workbench
+license: MIT
+documentation_url: ""

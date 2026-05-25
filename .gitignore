@@ -1,0 +1,71 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.pnp.*
+
+# Build output
+dist/
+build/
+release/
+*.tsbuildinfo
+
+# Runtime data
+.rwb/
+tmp/
+*.log
+logs/
+
+# Test artifacts
+coverage/
+test-results/
+playwright-report/
+.playwright-mcp/
+.vitest-cache/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Secrets — never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.pfx
+*.p12
+*.crt
+*credentials.json
+*secrets.json
+*.secret
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# R
+.Rhistory
+.RData
+.Ruserdata
+renv/library/
+renv/python/
+renv/staging/
+
+# Electron-builder output
+apps/desktop/release/
+
+# Local project scratch
+scratch/
+*.scratch

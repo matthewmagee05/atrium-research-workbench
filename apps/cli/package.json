@@ -1,0 +1,16 @@
+{
+  "name": "@research-workbench/cli",
+  "version": "0.0.0-tier0",
+  "private": true,
+  "bin": {
+    "rwb": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@research-workbench/core": "file:../../packages/core",
+    "commander": "^14.0.0"
+  }
+}

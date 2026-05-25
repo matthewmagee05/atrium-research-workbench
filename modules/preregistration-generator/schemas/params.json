@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "template": {"type": "string", "enum": ["osf-standard", "amstar", "prisma", "custom"]},
+    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
+    "model": {"type": "string"}
+  },
+  "additionalProperties": false
+}

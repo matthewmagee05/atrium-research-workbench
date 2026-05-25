@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "include_artifacts": {"type": "boolean"},
+    "include_modules": {"type": "boolean"},
+    "output_path": {"type": "string"}
+  }
+}

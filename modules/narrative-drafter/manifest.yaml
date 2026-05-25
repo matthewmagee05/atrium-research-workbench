@@ -1,0 +1,55 @@
+id: narrative-drafter
+version: 1.0.0
+name: Narrative Drafter
+description: Drafts manuscript narrative from analysis artifacts with a claim grounding table.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: summary
+    schema: schemas/summary_input.json
+    optional: false
+outputs:
+  - name: draft
+    schema: schemas/draft.json
+    description: Draft report text.
+    output_kind: report_text
+  - name: claims
+    schema: schemas/claims.json
+    description: Claim grounding table.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: true
+  budget:
+    max_tokens_per_run: 10000
+    max_calls_per_run: 3
+    max_cost_usd_per_run: 2.0
+  prompts:
+    - id: narrative_draft_v1
+      path: prompts/narrative_draft.md
+      version: 1.0.0
+determinism:
+  level: replayable
+  guarantee: Original LLM output is canonical; re-execution may vary.
+  variance_sources:
+    - model_version
+    - sampling
+  reproduction_metrics:
+    - schema_validity
+    - field_agreement_rate
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+human_in_the_loop:
+  enabled: true
+  triggers:
+    - explicit_review_flag
+author: Research Workbench
+license: MIT
+documentation_url: ""

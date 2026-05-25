@@ -1,0 +1,72 @@
+protocol_version: "1.0"
+project:
+  id: "11111111-1111-4111-8111-111111111111"
+  name: "Tier 0 Reproducibility Spike"
+  description: "Fixture source to normalizer to descriptive summary."
+  created_at: "2026-05-25T00:00:00.000Z"
+  created_by: "Research Workbench"
+frozen:
+  is_frozen: false
+budget:
+  max_llm_calls_per_run: 0
+  max_tokens_per_run: 0
+  max_cost_usd_per_run: 0
+  require_confirmation_above_usd: 0
+  stop_on_budget_exceeded: true
+reproduction_policy:
+  default_mode: "replay"
+  on_volatile_stage:
+    rerun_warning: true
+  on_replayable_stage:
+    enable_variance_audit: false
+  human_decisions:
+    replay_by_default: true
+    rerun_behavior: "treat_as_suggestions"
+nodes:
+  - id: "22222222-2222-4222-8222-222222222222"
+    name: "Tiny Corpus Fixture"
+    module:
+      id: "fixture-source"
+      version: "1.0.0"
+    params:
+      fixture_id: "tiny-corpus"
+    position: {x: 0, y: 0}
+  - id: "33333333-3333-4333-8333-333333333333"
+    name: "Normalize Records"
+    module:
+      id: "record-normalizer"
+      version: "1.0.0"
+    params: {}
+    position: {x: 300, y: 0}
+  - id: "44444444-4444-4444-8444-444444444444"
+    name: "Descriptive Summary"
+    module:
+      id: "descriptive-summary-py"
+      version: "1.0.0"
+    params:
+      summary_fields:
+        - "publication_year"
+        - "venue"
+        - "doi"
+    position: {x: 600, y: 0}
+edges:
+  - from: {node_id: "22222222-2222-4222-8222-222222222222", port: "records"}
+    to: {node_id: "33333333-3333-4333-8333-333333333333", port: "records"}
+  - from: {node_id: "33333333-3333-4333-8333-333333333333", port: "normalized"}
+    to: {node_id: "44444444-4444-4444-8444-444444444444", port: "normalized"}
+narrative_journal_ref: "journal.md"
+environment:
+  workbench_version: "0.0.0-tier0"
+  required_modules:
+    - id: "fixture-source"
+      version: "1.0.0"
+      manifest_hash: ""
+    - id: "record-normalizer"
+      version: "1.0.0"
+      manifest_hash: ""
+    - id: "descriptive-summary-py"
+      version: "1.0.0"
+      manifest_hash: ""
+  required_runtimes:
+    python: ">=3.11"
+    node: ">=20"

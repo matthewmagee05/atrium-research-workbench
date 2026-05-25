@@ -1,0 +1,31 @@
+id: prisma-flow
+version: 0.1.0
+name: PRISMA Flow
+description: Generates a structured PRISMA flow summary from screening decisions.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: screening_decisions
+    schema: schemas/screening_decisions.json
+    optional: false
+outputs:
+  - name: prisma_flow
+    schema: schemas/prisma_flow.json
+    description: PRISMA flow counts.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm: {required: false, budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}, prompts: []}
+determinism:
+  level: deterministic
+  guarantee: Pure count aggregation over screening decisions.
+  variance_sources: []
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop: {enabled: false, triggers: []}
+side_effects: {network: false, network_domains: [], filesystem_write: true, external_processes: false}
+author: Research Workbench
+license: MIT
+documentation_url: ""

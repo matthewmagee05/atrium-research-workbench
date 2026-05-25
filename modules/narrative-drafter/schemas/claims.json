@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "required": ["claims"],
+  "properties": {
+    "claims": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["claim_id", "text", "section", "supported_by", "record_ids", "status"],
+        "properties": {
+          "claim_id": {"type": "string"},
+          "text": {"type": "string"},
+          "section": {"type": "string"},
+          "supported_by": {"type": "array"},
+          "record_ids": {"type": "array"},
+          "status": {"type": "string", "enum": ["grounded", "ungrounded_requires_review"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

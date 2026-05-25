@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "doi_match": {"type": "boolean"},
+    "title_similarity_threshold": {"type": "number"},
+    "author_overlap_threshold": {"type": "number"}
+  },
+  "additionalProperties": false
+}

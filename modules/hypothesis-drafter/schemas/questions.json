@@ -1,0 +1,1 @@
+{"type": "object", "required": ["questions"], "properties": {"questions": {"type": "array"}}, "additionalProperties": true}

@@ -1,0 +1,13 @@
+{
+  "name": "@research-workbench/module-sdk-node",
+  "version": "0.0.0-tier0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}

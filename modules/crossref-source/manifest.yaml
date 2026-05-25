@@ -1,0 +1,32 @@
+id: crossref-source
+version: 0.1.0
+name: Crossref Source
+description: Tier 2 source module contract for Crossref literature searches.
+stage: source
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs: []
+outputs:
+  - name: records
+    schema: schemas/records.json
+    description: Crossref-shaped records normalized to source payload objects.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm: {required: false, budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}, prompts: []}
+determinism:
+  level: volatile
+  guarantee: Live Crossref responses must be archived; fixture/snapshot modes are deterministic.
+  variance_sources: [external_api_state]
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop: {enabled: false, triggers: []}
+side_effects:
+  network: true
+  network_domains: [api.crossref.org]
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://api.crossref.org/

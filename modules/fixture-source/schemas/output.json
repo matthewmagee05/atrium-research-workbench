@@ -1,0 +1,17 @@
+{
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["id", "title"],
+    "properties": {
+      "id": {"type": "string"},
+      "doi": {"type": ["string", "null"]},
+      "title": {"type": "string"},
+      "publication_year": {"type": "integer"},
+      "publication_date": {"type": "string"},
+      "authorships": {"type": "array"},
+      "primary_location": {"type": "object"}
+    },
+    "additionalProperties": true
+  }
+}

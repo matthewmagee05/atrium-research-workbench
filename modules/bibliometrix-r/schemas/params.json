@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["analyses"],
+  "properties": {
+    "analyses": {"type": "array", "items": {"type": "string"}},
+    "use_bibliometrix_package": {
+      "type": "boolean",
+      "description": "When true, attempt to call bibliometrix::biblioAnalysis() and add results to summary. Requires the bibliometrix CRAN package."
+    }
+  },
+  "additionalProperties": false
+}

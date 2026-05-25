@@ -1,0 +1,40 @@
+id: proxy-smoke
+version: 1.0.0
+name: Proxy Smoke
+description: Built-in test module that exercises runner proxy journal, progress, and review operations.
+stage: custom
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs: []
+outputs:
+  - name: result
+    schema: schemas/result.json
+    description: Proxy smoke result.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget:
+    max_tokens_per_run: 0
+    max_calls_per_run: 0
+    max_cost_usd_per_run: 0
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Emits deterministic status after proxy calls complete.
+  variance_sources: []
+  reproduction_metrics: [schema_validity]
+human_in_the_loop:
+  enabled: true
+  triggers: [explicit_review_flag]
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

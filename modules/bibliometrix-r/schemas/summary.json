@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["records_total", "corpus_final_record_count", "analyses"],
+  "properties": {
+    "records_total": {"type": "integer"},
+    "corpus_final_record_count": {"type": "integer"},
+    "analyses": {"type": "array", "items": {"type": "string"}},
+    "year_count": {"type": "integer"},
+    "venue_count": {"type": "integer"},
+    "author_count": {"type": "integer"},
+    "total_citations": {"type": "number"},
+    "mean_citations": {"type": "number"},
+    "median_citations": {"type": "number"},
+    "most_cited_title": {"type": "string"},
+    "most_cited_citations": {"type": "number"},
+    "bibliometrix_package": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

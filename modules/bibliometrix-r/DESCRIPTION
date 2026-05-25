@@ -1,0 +1,6 @@
+Package: bibliometrix-r-module
+Type: Package
+Title: Research Workbench Bibliometrix R Module
+Version: 1.0.0
+Imports:
+    jsonlite

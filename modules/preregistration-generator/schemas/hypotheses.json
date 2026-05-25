@@ -1,0 +1,1 @@
+{"type": "object", "required": ["hypotheses"], "properties": {"hypotheses": {"type": "array"}}, "additionalProperties": true}

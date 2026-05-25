@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "sections": {"type": "array", "items": {"type": "string"}},
+    "style_guide": {"type": "string"},
+    "provider": {"type": "string", "enum": ["anthropic", "ollama", "openai"]},
+    "model": {"type": "string"}
+  },
+  "dependencies": {
+    "provider": ["model"],
+    "model": ["provider"]
+  },
+  "additionalProperties": false
+}
