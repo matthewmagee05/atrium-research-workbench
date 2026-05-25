@@ -105,16 +105,37 @@ ipcMain.handle("rwb:protocol:write", (_event, protocolPath: string, protocol: un
   fs.writeFileSync(protocolPath, YAML.stringify(protocol), "utf8");
   return { path: protocolPath, bytes: fs.statSync(protocolPath).size };
 });
-ipcMain.handle("rwb:run", (event, protocolPath: string, options?: { mode?: string; varianceIterations?: number }) =>
-  runProtocol(protocolPath, corePaths, {
+ipcMain.handle("rwb:run", async (event, protocolPath: string, options?: {
+  mode?: string;
+  varianceIterations?: number;
+  protocol?: unknown;
+  freezeBeforeRun?: boolean;
+}) => {
+  // Defense in depth: if the renderer passes the live pipeline, persist it to disk
+  // before running. This guarantees the on-disk protocol matches the canvas even if
+  // the renderer skipped its own pre-write step (stale build, race, etc.).
+  if (options?.protocol) {
+    fs.mkdirSync(path.dirname(protocolPath), { recursive: true });
+    fs.writeFileSync(protocolPath, YAML.stringify(options.protocol), "utf8");
+  }
+  if (!fs.existsSync(protocolPath)) {
+    throw new Error(
+      `protocol.yaml not found at ${protocolPath}. ` +
+      `Click "Freeze" before running, or open a project that already has one.`
+    );
+  }
+  if (options?.freezeBeforeRun) {
+    freezeProtocol(protocolPath, corePaths);
+  }
+  return runProtocol(protocolPath, corePaths, {
     projectDir: path.dirname(protocolPath),
     mode: (options?.mode as "execute" | "deterministic-rerun" | "full-rerun" | "variance-audit") ?? "execute",
     varianceIterations: options?.varianceIterations,
     onProgress: (progress) => {
       try { event.sender.send("rwb:run:progress", progress); } catch { /* sender may have closed */ }
     },
-  })
-);
+  });
+});
 ipcMain.handle("rwb:methods:generate", (_event, projectDir: string) => generateMethods(projectDir));
 ipcMain.handle("rwb:env:lock", (_event, projectDir: string) => generateEnvironmentLock(projectDir, corePaths));
 ipcMain.handle("rwb:bundle:export", async (_event, projectDir: string) => {

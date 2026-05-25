@@ -106,13 +106,16 @@ export function Topbar() {
     setRunBusy(true);
     resetRunProgress();
     try {
-      setStatus("Saving pipeline to protocol.yaml…");
-      const wrote = await writePipelineToDisk();
-      if (!wrote) { setRunBusy(false); return; }
-      setStatus("Freezing protocol…");
-      if (api) await api.freezeProtocol(protocolPath);
-      setStatus("Running pipeline…");
-      const result = (api ? await api.run(protocolPath, { mode }) : { completed_status: "preview" }) as Record<string, unknown>;
+      setStatus("Saving + running pipeline…");
+      const serialized = serializePipelineToProtocol(pipelineNodes, pipelineEdges, modules, {
+        projectName: projectDir.split(/[/\\]/).filter(Boolean).pop() ?? "Atrium Project",
+      });
+      // Pass the live pipeline through the run IPC so main always writes the
+      // canonical YAML before invoking the runner. Defense in depth: even on a
+      // stale renderer build, the run cannot reference a missing protocol.yaml.
+      const result = (api
+        ? await api.run(protocolPath, { mode, protocol: serialized, freezeBeforeRun: true })
+        : { completed_status: "preview" }) as Record<string, unknown>;
       setLastRun(result);
       setBudget({
         totalCalls: Number(result.total_llm_calls ?? 0),

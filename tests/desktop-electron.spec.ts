@@ -135,6 +135,102 @@ test.describe("Atrium Electron main-process E2E", () => {
     fs.rmSync(dir, { recursive: true });
   });
 
+  test("rwb:run accepts a live pipeline payload, writes protocol.yaml, freezes, and runs", async () => {
+    // Skip when better-sqlite3 native module isn't loadable for this Electron's
+    // ABI (e.g. local dev on Apple Silicon with Rosetta-Node — prebuilts are x86_64).
+    // CI on Linux has matching prebuilts and runs the full path.
+    const nativeOk = await app.evaluate(async () => {
+      try {
+        // @ts-expect-error testing dynamic require in main
+        require("better-sqlite3");
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    test.skip(!nativeOk, "better-sqlite3 native module mismatch for this Electron ABI; run via CI or rebuild natively for arm64");
+
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-e2e-run-"));
+    const protocolPath = path.join(dir, "protocol.yaml");
+    const sourceParams = { fixture_id: "tiny-corpus" };
+
+    const liveProtocol = {
+      protocol_version: "1.0",
+      project: {
+        id: "deadbeef-dead-4bee-8eef-deadbeefdead",
+        name: "E2E Run Test",
+        description: "Verifies the run IPC self-write path",
+        created_at: "2026-05-25T00:00:00.000Z",
+        created_by: "e2e",
+      },
+      frozen: { is_frozen: false },
+      budget: {
+        max_llm_calls_per_run: 0, max_tokens_per_run: 0, max_cost_usd_per_run: 0,
+        require_confirmation_above_usd: 0, stop_on_budget_exceeded: true,
+      },
+      reproduction_policy: {
+        default_mode: "replay",
+        on_volatile_stage: { rerun_warning: true },
+        on_replayable_stage: { enable_variance_audit: false },
+        human_decisions: { replay_by_default: true, rerun_behavior: "treat_as_suggestions" },
+      },
+      nodes: [
+        {
+          id: "11111111-1111-4111-8111-111111111111",
+          name: "Fixture Source",
+          module: { id: "fixture-source", version: "1.0.0" },
+          params: sourceParams,
+        },
+      ],
+      edges: [],
+    };
+
+    // initProject would normally be called by openProject; mimic by ensuring .rwb exists.
+    fs.mkdirSync(path.join(dir, ".rwb", "scratch"), { recursive: true });
+    fs.mkdirSync(path.join(dir, ".rwb", "artifacts"), { recursive: true });
+
+    const result = await app.evaluate(async ({ ipcMain }, args) => {
+      const handlers = (ipcMain as unknown as { _invokeHandlers: Map<string, (e: unknown, ...a: unknown[]) => unknown> })._invokeHandlers;
+      const runHandler = handlers.get("rwb:run");
+      if (!runHandler) throw new Error("rwb:run not registered");
+      const fakeEvent = { sender: { send: () => undefined } };
+      return await runHandler(fakeEvent, args.protocolPath, {
+        mode: "execute",
+        protocol: args.protocol,
+        freezeBeforeRun: true,
+      });
+    }, { protocolPath, protocol: liveProtocol });
+
+    expect(fs.existsSync(protocolPath)).toBe(true);
+    const manifest = result as { completed_status: string; nodes: Array<{ status: string }> };
+    expect(manifest.completed_status).toBe("success");
+    expect(manifest.nodes).toHaveLength(1);
+    expect(manifest.nodes[0].status).toBe("completed");
+
+    fs.rmSync(dir, { recursive: true });
+  });
+
+  test("rwb:run rejects with a clear error when protocol.yaml is missing", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-e2e-missing-"));
+    const protocolPath = path.join(dir, "protocol.yaml");
+
+    const err = await app.evaluate(async ({ ipcMain }, args) => {
+      const handlers = (ipcMain as unknown as { _invokeHandlers: Map<string, (e: unknown, ...a: unknown[]) => unknown> })._invokeHandlers;
+      const runHandler = handlers.get("rwb:run");
+      if (!runHandler) throw new Error("rwb:run not registered");
+      try {
+        await runHandler({ sender: { send: () => undefined } }, args.protocolPath, { mode: "execute" });
+        return null;
+      } catch (e) {
+        return (e as Error).message;
+      }
+    }, { protocolPath });
+
+    expect(err).toContain("protocol.yaml not found");
+    expect(err).toContain("Freeze");
+    fs.rmSync(dir, { recursive: true });
+  });
+
   test("preload exposes bundle import/verify/diff helpers", async () => {
     const exposed = await window.evaluate(() => ({
       // @ts-expect-error window.rwb is injected by preload
