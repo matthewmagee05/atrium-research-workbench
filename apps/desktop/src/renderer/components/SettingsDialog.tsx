@@ -1,6 +1,26 @@
 import { useEffect, useState } from "react";
-import { X, KeyRound, CheckCircle, XCircle, Loader, Plug, Eye, EyeOff, Trash2 } from "lucide-react";
+import { X, KeyRound, CheckCircle, XCircle, Loader, Plug, Eye, EyeOff, Trash2, Wand2, AlertTriangle } from "lucide-react";
 import { useWorkspace } from "../store/workspace";
+
+const SMART_TO_ASCII: Record<string, string> = {
+  "‐": "-", "‑": "-", "‒": "-", "–": "-", "—": "-", "―": "-",
+  "‘": "'", "’": "'", "‚": "'", "‛": "'",
+  "“": "\"", "”": "\"", "„": "\"", "‟": "\"",
+  " ": " ", " ": " ", " ": " ", "​": "", "‌": "", "‍": "",
+  "﻿": "",
+};
+
+function detectNonAscii(value: string): { index: number; char: string; code: number } | null {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code > 127) return { index: i, char: value[i], code };
+  }
+  return null;
+}
+
+function sanitizeAscii(value: string): string {
+  return value.replace(/./gsu, (ch) => (ch in SMART_TO_ASCII ? SMART_TO_ASCII[ch] : ch));
+}
 
 const api = window.rwb;
 
@@ -95,6 +115,8 @@ export function SettingsDialog() {
         </p>
         {PROVIDERS.map((p) => {
           const isStored = credentialStatus[p.id];
+          const currentValue = values[p.id] ?? "";
+          const offender = detectNonAscii(currentValue);
           return (
             <div key={p.id} className="settingsRow">
               <div className="settingsRowHead">
@@ -134,7 +156,8 @@ export function SettingsDialog() {
                 <button
                   className="iconBtn small primary"
                   onClick={() => storeCredential(p.id)}
-                  disabled={!values[p.id]?.trim() || storeStatus[p.id] === "testing"}
+                  disabled={!values[p.id]?.trim() || storeStatus[p.id] === "testing" || offender !== null}
+                  title={offender ? "Fix the non-ASCII character first" : undefined}
                 >
                   Save {statusIcon(storeStatus[p.id])}
                 </button>
@@ -153,7 +176,24 @@ export function SettingsDialog() {
                   </button>
                 )}
               </div>
-              {detail[p.id] && (
+              {offender && (
+                <div className="settingsDetail fail asciiWarn">
+                  <AlertTriangle size={12} />
+                  <span>
+                    Non-ASCII character <code>{offender.char}</code>{" "}
+                    (U+{offender.code.toString(16).toUpperCase().padStart(4, "0")}) at position {offender.index}.
+                    Likely an autocorrected dash or smart quote.
+                  </span>
+                  <button
+                    className="iconBtn small"
+                    onClick={() => setValues((prev) => ({ ...prev, [p.id]: sanitizeAscii(currentValue) }))}
+                    title="Replace smart quotes / em-dashes with plain ASCII"
+                  >
+                    <Wand2 size={12} /> Fix
+                  </button>
+                </div>
+              )}
+              {detail[p.id] && !offender && (
                 <span className={`settingsDetail ${storeStatus[p.id] === "fail" || testStatus[p.id] === "fail" ? "fail" : storeStatus[p.id] === "pass" || testStatus[p.id] === "pass" ? "pass" : ""}`}>
                   {detail[p.id]}
                 </span>

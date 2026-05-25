@@ -1484,6 +1484,33 @@ button.ghost {
 .settingsDetail.pass { color: #218551; }
 .settingsDetail.fail { color: #c0392b; }
 
+.settingsDetail.asciiWarn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: #fff4d6;
+  border-left: 3px solid #d4a017;
+  border-radius: 0 4px 4px 0;
+  color: #5a4400;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.settingsDetail.asciiWarn code {
+  font-family: ui-monospace, monospace;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-size: 12px;
+}
+
+.settingsDetail.asciiWarn .iconBtn {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
 .iconBtn.primary {
   background: #2f9b75;
   color: white;

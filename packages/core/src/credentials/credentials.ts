@@ -40,10 +40,58 @@ export interface CredentialTestResult {
   detail?: string;
 }
 
+/**
+ * Returns the first non-ASCII character offending an HTTP header value, or null if clean.
+ * HTTP headers are restricted to ISO-8859-1 (bytes 0-255). API keys themselves must be
+ * plain ASCII — any em-dash, smart quote, or non-breaking space is almost always a paste
+ * artifact from autocorrected source text.
+ */
+export function findNonAsciiChar(value: string): { index: number; char: string; code: number } | null {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code > 127) {
+      return { index: i, char: value[i], code };
+    }
+  }
+  return null;
+}
+
+const COMMON_AUTOCORRECT_REPLACEMENTS: Record<string, string> = {
+  "‐": "-", "‑": "-", "‒": "-", "–": "-", "—": "-", "―": "-", // hyphens / dashes
+  "‘": "'", "’": "'", "‚": "'", "‛": "'",                                // single quotes
+  "“": "\"", "”": "\"", "„": "\"", "‟": "\"",                            // double quotes
+  " ": " ", " ": " ", " ": " ", "​": "", "‌": "", "‍": "",     // spaces / zero-width
+  "﻿": "",                                                                              // BOM
+};
+
+/**
+ * Replace common autocorrect artifacts (smart quotes, em-dash, non-breaking space) with
+ * their ASCII equivalents. Returns the cleaned string and the count of replacements.
+ */
+export function sanitizeCredentialPaste(value: string): { cleaned: string; replaced: number } {
+  let replaced = 0;
+  const cleaned = value.replace(/./gsu, (ch) => {
+    const sub = COMMON_AUTOCORRECT_REPLACEMENTS[ch];
+    if (sub !== undefined) {
+      replaced += 1;
+      return sub;
+    }
+    return ch;
+  });
+  return { cleaned, replaced };
+}
+
 export async function testCredential(provider: CredentialProvider, value: string): Promise<CredentialTestResult> {
   const trimmed = value.trim();
   if (!trimmed) {
-    return { ok: false, detail: "empty value" };
+    return { ok: false, detail: "Empty value." };
+  }
+  const offending = findNonAsciiChar(trimmed);
+  if (offending) {
+    return {
+      ok: false,
+      detail: `Value contains a non-ASCII character "${offending.char}" (U+${offending.code.toString(16).toUpperCase().padStart(4, "0")}) at position ${offending.index}. API keys must be plain ASCII — autocorrected dashes or smart quotes are a common cause. Try retyping the value or pasting from a plain-text source.`,
+    };
   }
   try {
     if (provider === "anthropic") {

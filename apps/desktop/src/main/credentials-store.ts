@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { app, safeStorage } from "electron";
+import { findNonAsciiChar } from "@research-workbench/core";
 
 const PROVIDERS = ["anthropic", "openai", "ollama"] as const;
 export type Provider = typeof PROVIDERS[number];
@@ -56,6 +57,14 @@ export function desktopSetCredential(provider: Provider, value: string): void {
     delete store[provider];
     delete process.env[envVarName(provider)];
   } else {
+    const offending = findNonAsciiChar(value);
+    if (offending) {
+      throw new Error(
+        `Cannot save: value contains a non-ASCII character "${offending.char}" (U+${offending.code.toString(16).toUpperCase().padStart(4, "0")}) at position ${offending.index}. ` +
+        `This usually means autocorrect or smart-quote substitution corrupted the paste. ` +
+        `Click "Fix" in the dialog or retype the value, then try again.`
+      );
+    }
     const encrypted = safeStorage.encryptString(value);
     store[provider] = encrypted.toString("base64");
     process.env[envVarName(provider)] = value;

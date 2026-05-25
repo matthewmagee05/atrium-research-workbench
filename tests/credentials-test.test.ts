@@ -16,7 +16,7 @@ describe("testCredential", () => {
   it("returns ok:false for empty value", async () => {
     const result = await testCredential("anthropic", "");
     expect(result.ok).toBe(false);
-    expect(result.detail).toBe("empty value");
+    expect(result.detail?.toLowerCase()).toContain("empty");
   });
 
   it("reports ok:true for Anthropic 200 response", async () => {

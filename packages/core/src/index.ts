@@ -4,7 +4,7 @@ import { diffArtifacts } from "./artifacts/diff";
 import { exportBundle, importBundle, inspectBundleTrust, replayBundle, verifyBundle } from "./bundle/bundle";
 import { assertBudgetAvailable } from "./budget/budget";
 import { validateClaimGrounding } from "./claim-grounding/validator";
-import { getCredential, getCredentialStatus, scrubSecrets, setCredential, testCredential } from "./credentials/credentials";
+import { findNonAsciiChar, getCredential, getCredentialStatus, sanitizeCredentialPaste, scrubSecrets, setCredential, testCredential } from "./credentials/credentials";
 import { generateEnvironmentLock } from "./environment-lock/environment-lock";
 import { addJournalEntry } from "./journal/journal";
 import { generateMethods } from "./methods-generator/methods";
@@ -33,6 +33,7 @@ export {
   createReviewItem,
   diffArtifacts,
   exportBundle,
+  findNonAsciiChar,
   freezeProtocol,
   generateEnvironmentLock,
   generateMethods,
@@ -49,6 +50,7 @@ export {
   resolvedDecisionsForNode,
   resolveReviewItem,
   runProtocol,
+  sanitizeCredentialPaste,
   scrubSecrets,
   setCredential,
   testCredential,
