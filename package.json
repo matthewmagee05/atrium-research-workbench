@@ -12,7 +12,8 @@
     "test": "npm run build && vitest run",
     "golden:tier0": "npm run build && vitest run tests/tier0-golden.test.ts",
     "golden:tier1a": "npm run build && vitest run tests/tier1a-golden.test.ts",
-    "test:desktop": "npm run build -w apps/desktop && playwright test tests/desktop-preview.spec.ts",
+    "test:desktop": "npm run build -w apps/desktop && playwright test --project=renderer",
+    "test:electron": "npm run build -w apps/desktop && playwright test --project=electron",
     "typecheck": "npm run build -w packages/core && npm run typecheck -w packages/core && npm run typecheck -w apps/cli && npm run typecheck -w apps/desktop"
   },
   "devDependencies": {

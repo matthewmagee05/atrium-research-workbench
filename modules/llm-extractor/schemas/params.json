@@ -13,7 +13,9 @@
         },
         "additionalProperties": false
       }
-    }
+    },
+    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
+    "model": {"type": "string"}
   },
   "additionalProperties": false
 }

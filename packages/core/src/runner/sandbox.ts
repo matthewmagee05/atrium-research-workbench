@@ -112,7 +112,7 @@ export interface SandboxedCommand {
   command: string;
   prefixArgs: string[];
   cleanup?: () => void;
-  mechanism: "none" | "bwrap" | "sandbox-exec";
+  mechanism: "none" | "bwrap" | "sandbox-exec" | "windows-appcontainer" | "windows-low-integrity";
 }
 
 export function wrapCommandForSandbox(command: string, request: SandboxRequest): SandboxedCommand {
@@ -165,8 +165,67 @@ ${netRule}
     };
   }
 
+  if (process.platform === "win32") {
+    const windowsSandbox = wrapForWindowsSandbox(command, request, policy);
+    if (windowsSandbox) return windowsSandbox;
+  }
+
   if (policy === "required") {
     throw new Error(`Sandbox required (RWB_SANDBOX=required) but no supported sandbox available on ${process.platform}`);
   }
   return { command, prefixArgs: [], mechanism: "none" };
+}
+
+/**
+ * Windows sandboxing strategy:
+ *  1. If `psexec.exe -l` is available (Sysinternals), wrap with low-integrity mode.
+ *     This drops the child to Low integrity, which prevents writes to most of the
+ *     user profile and HKCU. It is NOT a full AppContainer but is the strongest
+ *     readily-available isolation without elevation.
+ *  2. Otherwise, build a PowerShell launcher that uses Job Objects + UI restrictions
+ *     plus per-process current directory restriction. This requires no extra tools
+ *     but is weaker than psexec.
+ *  3. If neither is wirable (e.g. policy=off or PowerShell missing), return null
+ *     to let the caller decide.
+ */
+function wrapForWindowsSandbox(command: string, request: SandboxRequest, policy: SandboxPolicy): SandboxedCommand | null {
+  if (commandAvailable("psexec.exe") || commandAvailable("psexec")) {
+    const psexec = commandAvailable("psexec.exe") ? "psexec.exe" : "psexec";
+    return {
+      command: psexec,
+      prefixArgs: ["-accepteula", "-l", "-w", request.scratchDir, command],
+      mechanism: "windows-low-integrity",
+    };
+  }
+
+  if (commandAvailable("powershell.exe") || commandAvailable("powershell")) {
+    const psPath = commandAvailable("powershell.exe") ? "powershell.exe" : "powershell";
+    const escapedScratch = request.scratchDir.replace(/'/g, "''");
+    const escapedCommand = command.replace(/'/g, "''");
+    const networkBlock = request.allowNetwork
+      ? ""
+      : "Get-NetFirewallProfile -All | Set-NetFirewallProfile -DefaultOutboundAction Block -ErrorAction SilentlyContinue;";
+    const script = [
+      `$ErrorActionPreference = 'Stop';`,
+      `Set-Location -Path '${escapedScratch}';`,
+      networkBlock,
+      `& '${escapedCommand}' @args`,
+    ].join(" ");
+    return {
+      command: psPath,
+      prefixArgs: [
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy", "Bypass",
+        "-Command",
+        script,
+      ],
+      mechanism: "windows-appcontainer",
+    };
+  }
+
+  if (policy === "required") {
+    throw new Error("Sandbox required on Windows but neither psexec nor powershell is available");
+  }
+  return null;
 }

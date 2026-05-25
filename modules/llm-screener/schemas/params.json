@@ -4,7 +4,9 @@
   "properties": {
     "inclusion_criteria": {"type": "array", "items": {"type": "string"}},
     "exclusion_criteria": {"type": "array", "items": {"type": "string"}},
-    "confidence_threshold": {"type": "number", "minimum": 0, "maximum": 1}
+    "confidence_threshold": {"type": "number", "minimum": 0, "maximum": 1},
+    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
+    "model": {"type": "string"}
   },
   "additionalProperties": false
 }

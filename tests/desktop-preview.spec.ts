@@ -7,7 +7,7 @@ test.describe("Atrium desktop renderer", () => {
     await expect(page.getByText("Systematic Review")).toBeVisible();
     await expect(page.getByText("Bibliometric Analysis")).toBeVisible();
     await expect(page.getByText("Hypothesis-Driven Research")).toBeVisible();
-    await expect(page.getByText("Blank Canvas")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Blank Canvas/ })).toBeVisible();
   });
 
   test("template selection advances to credentials wizard", async ({ page }) => {
