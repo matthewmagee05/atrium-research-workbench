@@ -51,15 +51,17 @@ describe("cross-language float agreement", () => {
   const testValues = [3.141592653589793, 2.5, 0.00012345678901234, 99999.999995, -1.23456789055];
 
   it("Python round_half_even matches JS roundHalfEven", () => {
+    const safeSdkDir = sdkDir.replace(/\\/g, "/");
     const pyScript = `
 import sys
-sys.path.insert(0, "${sdkDir}")
+sys.path.insert(0, "${safeSdkDir}")
 from rwb_sdk.canonical import round_half_even
 values = [${testValues.join(",")}]
 for v in values:
     print(repr(round_half_even(v, 10)))
 `;
-    const result = spawnSync("python3", ["-c", pyScript], { encoding: "utf8" });
+    const pythonCmd = process.platform === "win32" ? "python" : "python3";
+    const result = spawnSync(pythonCmd, ["-c", pyScript], { encoding: "utf8" });
     expect(result.status, result.stderr).toBe(0);
     const pyResults = result.stdout.trim().split("\n").map(Number);
     const jsResults = testValues.map((v) => roundHalfEven(v, 10));

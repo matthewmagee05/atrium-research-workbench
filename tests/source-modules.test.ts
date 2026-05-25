@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 const repoRoot = path.resolve(__dirname, "..");
 
 function runPythonModule(moduleDir: string, env: Record<string, string>): { status: number; stdout: string; stderr: string } {
-  const result = spawnSync("python3", [path.join(moduleDir, "entry.py")], {
+  const pythonCmd = process.platform === "win32" ? "python" : "python3";
+  const result = spawnSync(pythonCmd, [path.join(moduleDir, "entry.py")], {
     cwd: moduleDir,
     env: { ...process.env, ...env },
     encoding: "utf8",
