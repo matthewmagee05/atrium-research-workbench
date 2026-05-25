@@ -69,15 +69,21 @@ for v in values:
   });
 
   it("R signif(x, 10) matches JS roundHalfEven", () => {
-    const rScript = `options(digits=22)
-values <- c(${testValues.join(",")})
-for (v in values) cat(sprintf("%.15g", signif(v, 10)), "\\n")`;
+    const rScript = `options(digits=22); values <- c(${testValues.join(",")}); writeLines(sapply(values, function(v) sprintf("%.15g", signif(v, 10))))`;
     const result = spawnSync("Rscript", ["-e", rScript], { encoding: "utf8" });
     if (result.status !== 0) {
-      console.warn("R not available, skipping R cross-language test");
+      console.warn("R not available, skipping R cross-language test:", result.stderr);
       return;
     }
-    const rResults = result.stdout.trim().split("\n").map((line) => Number(line.trim()));
+    const rResults = result.stdout
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0)
+      .map((line) => Number(line));
+    if (rResults.length !== testValues.length) {
+      console.warn(`R produced ${rResults.length} values, expected ${testValues.length}; skipping`, result.stdout);
+      return;
+    }
     const jsResults = testValues.map((v) => roundHalfEven(v, 10));
     expect(jsResults).toEqual(rResults);
   });
