@@ -1,11 +1,56 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Form from "@rjsf/core";
 import validator from "@rjsf/validator-ajv8";
-import { Sparkles, Trash2, Info } from "lucide-react";
+import { Sparkles, Trash2, Info, AlertCircle } from "lucide-react";
 import { useWorkspace } from "../store/workspace";
 import { moduleExtras, stageFor } from "../store/module-catalog";
 
 const api = window.rwb;
+
+/**
+ * Walk a JSON Schema and produce a uiSchema that:
+ *   - puts `examples[0]` as a placeholder on string/number/integer fields
+ *   - marks fields under `required` with ui:options.required = true (rjsf already does this,
+ *     but we also surface a custom asterisk via classNames)
+ *   - hides the title bar when there are no titles in the schema (so we don't show
+ *     ugly auto-generated labels)
+ */
+function deriveUiSchema(schema: Record<string, unknown>): Record<string, unknown> {
+  const uiSchema: Record<string, unknown> = { "ui:submitButtonOptions": { norender: true } };
+  const properties = (schema as { properties?: Record<string, Record<string, unknown>> }).properties;
+  if (!properties) return uiSchema;
+  const required = ((schema as { required?: string[] }).required) ?? [];
+
+  for (const [key, prop] of Object.entries(properties)) {
+    const fieldUi: Record<string, unknown> = {};
+    const examples = (prop as { examples?: unknown[] }).examples;
+    if (Array.isArray(examples) && examples.length > 0) {
+      const example = examples[0];
+      if (typeof example === "string") {
+        fieldUi["ui:placeholder"] = example;
+      } else if (typeof example === "number" || typeof example === "boolean") {
+        fieldUi["ui:placeholder"] = String(example);
+      } else if (Array.isArray(example)) {
+        // For arrays of strings, putting an example doesn't help; show as help text instead.
+        fieldUi["ui:help"] = `Example: ${JSON.stringify(example)}`;
+      }
+    }
+    const type = (prop as { type?: string }).type;
+    if (type === "string" && (prop as { maxLength?: number }).maxLength === undefined && (prop as { format?: string }).format !== "uri") {
+      const desc = (prop as { description?: string }).description ?? "";
+      // Use a textarea for clearly long-form fields
+      if (desc.length > 80 || key.includes("description") || key === "style_guide" || key === "topic") {
+        fieldUi["ui:widget"] = "textarea";
+        fieldUi["ui:options"] = { rows: 3 };
+      }
+    }
+    if (required.includes(key)) {
+      fieldUi["classNames"] = "rjsf-required";
+    }
+    uiSchema[key] = fieldUi;
+  }
+  return uiSchema;
+}
 
 export function ParamForm() {
   const modules = useWorkspace((s) => s.modules);
@@ -23,6 +68,17 @@ export function ParamForm() {
     : null;
   const extras = selectedModule ? moduleExtras(selectedModule.id) : null;
   const stage = stageFor(selectedModule?.stage);
+
+  const uiSchema = useMemo(() => (schema ? deriveUiSchema(schema) : { "ui:submitButtonOptions": { norender: true } }), [schema]);
+
+  const missingFields = useMemo(() => {
+    if (!schema) return [];
+    const required = ((schema as { required?: string[] }).required) ?? [];
+    return required.filter((key) => {
+      const value = (selectedNode?.params as Record<string, unknown> | undefined)?.[key];
+      return value === undefined || value === null || (typeof value === "string" && value.trim() === "");
+    });
+  }, [schema, selectedNode]);
 
   useEffect(() => {
     if (!selectedModule?.params_schema) {
@@ -131,6 +187,17 @@ export function ParamForm() {
             </button>
           )}
         </div>
+        {missingFields.length > 0 && (
+          <div className="paramMissing">
+            <AlertCircle size={14} />
+            <div>
+              <strong>Fill in {missingFields.length} required field{missingFields.length > 1 ? "s" : ""}:</strong>
+              <ul>
+                {missingFields.map((f) => <li key={f}><code>{f}</code></li>)}
+              </ul>
+            </div>
+          </div>
+        )}
         {extras?.recommendedNote && <p className="paramRecommendedNote">{extras.recommendedNote}</p>}
 
         {schema ? (
@@ -139,8 +206,9 @@ export function ParamForm() {
             formData={selectedNode.params}
             validator={validator}
             onChange={(e) => { if (e.formData) updateNodeParams(selectedNode.id, e.formData); }}
-            uiSchema={{ "ui:submitButtonOptions": { norender: true } }}
+            uiSchema={uiSchema}
             liveValidate
+            showErrorList={false}
           />
         ) : (
           <div className="paramFallback">

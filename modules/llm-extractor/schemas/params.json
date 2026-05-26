@@ -4,18 +4,42 @@
   "properties": {
     "fields": {
       "type": "array",
+      "title": "Fields to extract",
+      "description": "What structured fields to pull out of each included paper. Each field needs a short snake_case name and a sentence describing what to extract.",
       "items": {
         "type": "object",
+        "title": "Field",
         "required": ["name", "description"],
         "properties": {
-          "name": {"type": "string"},
-          "description": {"type": "string"}
+          "name": {
+            "type": "string",
+            "title": "Field name",
+            "description": "snake_case identifier (e.g. sample_size, intervention_type)",
+            "examples": ["sample_size", "study_design"]
+          },
+          "description": {
+            "type": "string",
+            "title": "What to extract",
+            "description": "Plain-English instruction the LLM follows for this field.",
+            "examples": ["Total number of participants enrolled in the trial"]
+          }
         },
         "additionalProperties": false
-      }
+      },
+      "minItems": 1
     },
-    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
-    "model": {"type": "string"}
+    "provider": {
+      "type": "string",
+      "title": "LLM provider",
+      "enum": ["anthropic", "openai", "ollama"],
+      "default": "anthropic"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model",
+      "examples": ["claude-sonnet-4-20250514", "gpt-4o-mini"],
+      "default": "claude-sonnet-4-20250514"
+    }
   },
   "additionalProperties": false
 }

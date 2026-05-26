@@ -1,9 +1,28 @@
 {
   "type": "object",
   "properties": {
-    "doi_match": {"type": "boolean"},
-    "title_similarity_threshold": {"type": "number"},
-    "author_overlap_threshold": {"type": "number"}
+    "doi_match": {
+      "type": "boolean",
+      "title": "Match on DOI",
+      "description": "When true, records sharing a DOI are merged. Recommended.",
+      "default": true
+    },
+    "title_similarity_threshold": {
+      "type": "number",
+      "title": "Title similarity threshold",
+      "description": "Records whose normalized titles are this similar or higher are considered duplicates (0.0–1.0). 0.95 is a strict default.",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.95
+    },
+    "author_overlap_threshold": {
+      "type": "number",
+      "title": "Author overlap threshold",
+      "description": "Minimum fraction of authors that must overlap to count as a duplicate (0.0–1.0).",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.5
+    }
   },
   "additionalProperties": false
 }

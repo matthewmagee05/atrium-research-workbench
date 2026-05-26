@@ -1,10 +1,32 @@
 {
   "type": "object",
   "properties": {
-    "sections": {"type": "array", "items": {"type": "string"}},
-    "style_guide": {"type": "string"},
-    "provider": {"type": "string", "enum": ["anthropic", "ollama", "openai"]},
-    "model": {"type": "string"}
+    "sections": {
+      "type": "array",
+      "title": "Report sections",
+      "description": "Which sections the LLM should draft. Use standard manuscript headings.",
+      "items": { "type": "string" },
+      "examples": [["Background", "Methods", "Results", "Discussion"]],
+      "default": ["Background", "Methods", "Results", "Discussion"]
+    },
+    "style_guide": {
+      "type": "string",
+      "title": "Style guide",
+      "description": "Free-text guidance on tone, audience, citation style, etc.",
+      "examples": ["Academic tone. Cite using author-year. Avoid passive voice."]
+    },
+    "provider": {
+      "type": "string",
+      "title": "LLM provider",
+      "enum": ["anthropic", "ollama", "openai"],
+      "default": "anthropic"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model",
+      "examples": ["claude-sonnet-4-20250514", "gpt-4o-mini"],
+      "default": "claude-sonnet-4-20250514"
+    }
   },
   "dependencies": {
     "provider": ["model"],

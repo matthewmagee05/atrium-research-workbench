@@ -2,10 +2,29 @@
   "type": "object",
   "required": ["analyses"],
   "properties": {
-    "analyses": {"type": "array", "items": {"type": "string"}},
+    "analyses": {
+      "type": "array",
+      "title": "Analyses to run",
+      "description": "Which bibliometric analyses to compute. Each adds a section to the summary.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "annual_publications",
+          "venue_publications",
+          "author_publications",
+          "citation_summary",
+          "coauthor_network",
+          "keyword_frequency",
+          "annual_growth_rate"
+        ]
+      },
+      "examples": [["annual_publications", "venue_publications", "author_publications"]]
+    },
     "use_bibliometrix_package": {
       "type": "boolean",
-      "description": "When true, attempt to call bibliometrix::biblioAnalysis() and add results to summary. Requires the bibliometrix CRAN package."
+      "title": "Use bibliometrix CRAN package",
+      "description": "When true, call bibliometrix::biblioAnalysis() and add results to the summary. Requires the bibliometrix CRAN package to be installed locally.",
+      "default": false
     }
   },
   "additionalProperties": false

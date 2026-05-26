@@ -1,10 +1,36 @@
 {
   "type": "object",
+  "required": ["topic"],
   "properties": {
-    "topic": {"type": "string"},
-    "max_questions": {"type": "integer", "minimum": 1, "maximum": 20},
-    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
-    "model": {"type": "string"}
+    "topic": {
+      "type": "string",
+      "title": "Research topic",
+      "description": "One sentence describing the area you want to investigate. The LLM will generate candidate questions from this. Be specific — vague topics produce vague questions.",
+      "examples": ["The impact of large language models on systematic review screening accuracy"],
+      "minLength": 10
+    },
+    "max_questions": {
+      "type": "integer",
+      "title": "Number of candidate questions",
+      "description": "How many candidate research questions to generate. 3–7 is a good range.",
+      "minimum": 1,
+      "maximum": 20,
+      "default": 5
+    },
+    "provider": {
+      "type": "string",
+      "title": "LLM provider",
+      "description": "Which API to call. Anthropic = Claude, OpenAI = GPT, Ollama = local (no API key needed).",
+      "enum": ["anthropic", "openai", "ollama"],
+      "default": "anthropic"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model",
+      "description": "Specific model identifier for the provider above. Defaults below match the chosen provider.",
+      "examples": ["claude-sonnet-4-20250514", "gpt-4o-mini", "llama3.1:8b"],
+      "default": "claude-sonnet-4-20250514"
+    }
   },
   "additionalProperties": false
 }

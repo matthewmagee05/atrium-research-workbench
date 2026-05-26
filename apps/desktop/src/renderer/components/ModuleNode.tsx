@@ -46,9 +46,17 @@ function ModuleNodeImpl({ data, selected }: NodeProps<ModuleNodeData>) {
     });
   }, [inputs, pipelineEdges, data.pipelineNodeId]);
 
-  const paramsLooksEmpty = !node?.params || Object.keys(node.params).length === 0;
-  const moduleNeedsParams = (mod?.params_schema ?? "").length > 0;
-  const showWarning = unconnectedRequiredInputs.length > 0 || (moduleNeedsParams && paramsLooksEmpty);
+  // Detect empty string params and surface them by name.
+  const emptyStringParams = useMemo(() => {
+    if (!node?.params) return [] as string[];
+    const out: string[] = [];
+    for (const [key, value] of Object.entries(node.params)) {
+      if (typeof value === "string" && value.trim() === "") out.push(key);
+    }
+    return out;
+  }, [node?.params]);
+
+  const showWarning = unconnectedRequiredInputs.length > 0 || emptyStringParams.length > 0;
 
   return (
     <div
@@ -70,9 +78,13 @@ function ModuleNodeImpl({ data, selected }: NodeProps<ModuleNodeData>) {
         <strong className="moduleNodeTitle">{mod?.name ?? data.moduleId}</strong>
         {showWarning && (
           <span className="moduleNodeWarning">
-            {unconnectedRequiredInputs.length > 0
-              ? `Needs: ${unconnectedRequiredInputs.map((i) => i.name).join(", ")}`
-              : "Needs params"}
+            {unconnectedRequiredInputs.length > 0 && (
+              <>Unconnected: {unconnectedRequiredInputs.map((i) => i.name).join(", ")}</>
+            )}
+            {unconnectedRequiredInputs.length > 0 && emptyStringParams.length > 0 && " · "}
+            {emptyStringParams.length > 0 && (
+              <>Fill in: {emptyStringParams.join(", ")}</>
+            )}
           </span>
         )}
         {progress?.status === "running" && <span className="moduleNodeStatus running">Running…</span>}

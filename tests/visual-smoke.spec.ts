@@ -68,6 +68,30 @@ test.describe("Visual smoke checks", () => {
     }
   });
 
+  test("loading a template auto-selects an incomplete node and shows guided form fields", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Pick a starting template/ }).click();
+    await page.getByRole("button", { name: /Use this template/ }).click();
+    await page.waitForTimeout(800);
+    await page.screenshot({ path: path.join(screenshotDir, "inspector-after-template.png"), fullPage: false });
+
+    // The Inspector should be showing a configurable node, not the empty state.
+    const emptyState = page.getByText(/Click a node on the canvas to edit it/);
+    expect(await emptyState.isVisible().catch(() => false)).toBe(false);
+
+    // The form should show labelled field names from the enriched schema, not just raw JSON.
+    // We expect at least one of the question-development field titles to be present.
+    const expectedTitles = ["Research topic", "Number of candidate questions", "LLM provider"];
+    let found = false;
+    for (const title of expectedTitles) {
+      if (await page.getByText(title, { exact: false }).first().isVisible().catch(() => false)) {
+        found = true;
+        break;
+      }
+    }
+    expect(found, "Inspector should show schema field titles after auto-selection").toBe(true);
+  });
+
   test("workbench module library does not overflow into the canvas", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Start with a blank canvas/ }).click();

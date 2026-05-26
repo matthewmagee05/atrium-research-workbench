@@ -1,9 +1,25 @@
 {
   "type": "object",
   "properties": {
-    "template": {"type": "string", "enum": ["osf-standard", "amstar", "prisma", "custom"]},
-    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
-    "model": {"type": "string"}
+    "template": {
+      "type": "string",
+      "title": "Preregistration template",
+      "description": "Which preregistration format to follow. osf-standard works for most projects.",
+      "enum": ["osf-standard", "amstar", "prisma", "custom"],
+      "default": "osf-standard"
+    },
+    "provider": {
+      "type": "string",
+      "title": "LLM provider",
+      "enum": ["anthropic", "openai", "ollama"],
+      "default": "anthropic"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model",
+      "examples": ["claude-sonnet-4-20250514", "gpt-4o-mini"],
+      "default": "claude-sonnet-4-20250514"
+    }
   },
   "additionalProperties": false
 }

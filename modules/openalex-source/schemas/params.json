@@ -2,12 +2,45 @@
   "type": "object",
   "required": ["source_mode"],
   "properties": {
-    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"]},
-    "fixture_id": {"type": "string"},
-    "query": {"type": "string"},
-    "filters": {"type": "object", "additionalProperties": {"type": ["string", "number", "boolean"]}},
-    "max_records": {"type": "integer", "minimum": 1, "maximum": 200},
-    "snapshot_path": {"type": "string"}
+    "source_mode": {
+      "type": "string",
+      "title": "Source mode",
+      "description": "fixture = use a bundled test corpus (no network). live_archived = call OpenAlex and archive every response for reproducibility. snapshot = read a previously-archived JSON file from disk.",
+      "enum": ["fixture", "live_archived", "snapshot"],
+      "default": "fixture"
+    },
+    "fixture_id": {
+      "type": "string",
+      "title": "Fixture ID",
+      "description": "Which bundled fixture to read in fixture mode. \"tiny-corpus\" is the demo fixture.",
+      "examples": ["tiny-corpus"],
+      "default": "tiny-corpus"
+    },
+    "query": {
+      "type": "string",
+      "title": "Search query (live mode)",
+      "description": "OpenAlex query string. Only used when source_mode = live_archived.",
+      "examples": ["large language models AND systematic review"]
+    },
+    "filters": {
+      "type": "object",
+      "title": "Filters (live mode)",
+      "description": "Additional OpenAlex filters as key/value pairs.",
+      "additionalProperties": { "type": ["string", "number", "boolean"] }
+    },
+    "max_records": {
+      "type": "integer",
+      "title": "Max records (live mode)",
+      "description": "Cap on how many records to fetch.",
+      "minimum": 1,
+      "maximum": 200,
+      "default": 50
+    },
+    "snapshot_path": {
+      "type": "string",
+      "title": "Snapshot path",
+      "description": "Absolute path to a previously-archived raw OpenAlex JSON. Only used when source_mode = snapshot."
+    }
   },
   "additionalProperties": false
 }

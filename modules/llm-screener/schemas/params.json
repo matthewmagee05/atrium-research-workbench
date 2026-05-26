@@ -2,11 +2,40 @@
   "type": "object",
   "required": ["inclusion_criteria", "exclusion_criteria"],
   "properties": {
-    "inclusion_criteria": {"type": "array", "items": {"type": "string"}},
-    "exclusion_criteria": {"type": "array", "items": {"type": "string"}},
-    "confidence_threshold": {"type": "number", "minimum": 0, "maximum": 1},
-    "provider": {"type": "string", "enum": ["anthropic", "openai", "ollama"]},
-    "model": {"type": "string"}
+    "inclusion_criteria": {
+      "type": "array",
+      "title": "Inclusion criteria",
+      "description": "Short phrases the LLM uses to decide whether to include a paper. Anything matching these → likely include.",
+      "items": { "type": "string", "title": "Criterion" },
+      "examples": [["studies humans", "reports effect size", "published 2015 or later"]]
+    },
+    "exclusion_criteria": {
+      "type": "array",
+      "title": "Exclusion criteria",
+      "description": "Short phrases that should disqualify a paper. Anything matching these → likely exclude.",
+      "items": { "type": "string", "title": "Criterion" },
+      "examples": [["non-English", "conference abstract only", "case report"]]
+    },
+    "confidence_threshold": {
+      "type": "number",
+      "title": "Confidence threshold",
+      "description": "Records below this LLM confidence get flagged for human review. 0.7 is a reasonable default.",
+      "minimum": 0,
+      "maximum": 1,
+      "default": 0.7
+    },
+    "provider": {
+      "type": "string",
+      "title": "LLM provider",
+      "enum": ["anthropic", "openai", "ollama"],
+      "default": "anthropic"
+    },
+    "model": {
+      "type": "string",
+      "title": "Model",
+      "examples": ["claude-sonnet-4-20250514", "gpt-4o-mini", "llama3.1:8b"],
+      "default": "claude-sonnet-4-20250514"
+    }
   },
   "additionalProperties": false
 }

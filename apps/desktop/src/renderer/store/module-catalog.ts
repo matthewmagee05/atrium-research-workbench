@@ -82,13 +82,13 @@ export const MODULE_EXTRAS: Record<string, ModuleExtras> = {
     tagline: "LLM-assisted title/abstract screening with inclusion/exclusion criteria.",
     whenToUse: "After dedupe, before extraction. Flags low-confidence decisions for human review.",
     recommendedParams: {
-      inclusion_criteria: ["topic relevant"],
-      exclusion_criteria: ["off topic", "not English"],
+      inclusion_criteria: ["studies humans", "reports a quantitative outcome"],
+      exclusion_criteria: ["non-English", "conference abstract only", "off topic"],
       confidence_threshold: 0.7,
       provider: "anthropic",
       model: "claude-sonnet-4-20250514",
     },
-    recommendedNote: "Set criteria as concise phrases the LLM can match against title + abstract.",
+    recommendedNote: "Edit the criteria to match YOUR review. The defaults are placeholders.",
   },
   "llm-extractor": {
     tagline: "Extract structured fields from included papers (effect sizes, sample sizes, etc.).",
@@ -126,9 +126,10 @@ export const MODULE_EXTRAS: Record<string, ModuleExtras> = {
     tagline: "LLM-drafted narrative report grounded in the summary and corpus.",
     whenToUse: "Final reporting step. Always requires human review before publication.",
     recommendedParams: {
+      sections: ["Background", "Methods", "Results", "Discussion"],
+      style_guide: "Academic tone. Cite using author-year. Avoid passive voice.",
       provider: "anthropic",
       model: "claude-sonnet-4-20250514",
-      style: "academic",
     },
   },
   "question-development": {
