@@ -51,23 +51,47 @@ top_n <- function(ct, n = 10) {
   head(sorted, n)
 }
 
-coauthor_edges <- list()
-for (rec_authors in authors_per_record) {
-  if (length(rec_authors) >= 2) {
-    for (i in seq_len(length(rec_authors) - 1)) {
-      for (j in (i + 1):length(rec_authors)) {
-        pair <- sort(c(rec_authors[[i]], rec_authors[[j]]))
-        key <- paste(pair, collapse = " <-> ")
-        if (is.null(coauthor_edges[[key]])) {
-          coauthor_edges[[key]] <- list(author_a = pair[1], author_b = pair[2], weight = 1L)
-        } else {
-          coauthor_edges[[key]]$weight <- coauthor_edges[[key]]$weight + 1L
+pair_edges <- function(items_per_record, left_name, right_name) {
+  edges <- list()
+  for (items in items_per_record) {
+    clean_items <- sort(unique(as.character(unlist(items, use.names = FALSE))))
+    clean_items <- clean_items[nchar(clean_items) > 0]
+    if (length(clean_items) >= 2) {
+      for (i in seq_len(length(clean_items) - 1)) {
+        for (j in (i + 1):length(clean_items)) {
+          pair <- c(clean_items[[i]], clean_items[[j]])
+          key <- paste(pair, collapse = " <-> ")
+          if (is.null(edges[[key]])) {
+            edge <- list(weight = 1L)
+            edge[[left_name]] <- pair[1]
+            edge[[right_name]] <- pair[2]
+            edges[[key]] <- edge
+          } else {
+            edges[[key]]$weight <- edges[[key]]$weight + 1L
+          }
         }
       }
     }
   }
+  unname(edges)
 }
-coauthor_network <- unname(coauthor_edges)
+
+h_index <- function(values) {
+  sorted <- sort(as.numeric(values), decreasing = TRUE)
+  h <- 0L
+  if (length(sorted) == 0) return(h)
+  for (i in seq_along(sorted)) {
+    if (sorted[[i]] >= i) h <- i
+  }
+  h
+}
+
+quantile_row <- function(values, prob) {
+  if (length(values) == 0) return(list(percentile = prob * 100, value = 0))
+  list(percentile = prob * 100, value = unname(round_half_even(quantile(values, probs = prob, names = FALSE, type = 7), 10)))
+}
+
+coauthor_network <- pair_edges(authors_per_record, "author_a", "author_b")
 
 papers_per_author <- table(authors)
 productivity_counts <- table(as.integer(papers_per_author))
@@ -77,6 +101,8 @@ author_productivity <- lapply(names(productivity_counts), function(n) {
 
 keywords_all <- unlist(lapply(records, function(record) record$keywords %||% list()), use.names = FALSE)
 keyword_frequency <- if (length(keywords_all) > 0) count_table(keywords_all) else list()
+keywords_per_record <- lapply(records, function(record) record$keywords %||% list())
+keyword_cooccurrence <- pair_edges(keywords_per_record, "keyword_a", "keyword_b")
 
 citations <- vapply(records, function(record) {
   val <- record$cited_by_count %||% 0
@@ -88,6 +114,81 @@ median_citations <- if (length(citations) > 0) median(citations) else 0
 most_cited_idx <- which.max(citations)
 most_cited_title <- if (length(most_cited_idx) > 0) records[[most_cited_idx]]$title %||% "" else ""
 most_cited_count <- if (length(most_cited_idx) > 0) citations[most_cited_idx] else 0
+citation_distribution <- list(
+  quantile_row(citations, 0),
+  quantile_row(citations, 0.25),
+  quantile_row(citations, 0.5),
+  quantile_row(citations, 0.75),
+  quantile_row(citations, 1)
+)
+most_cited_records <- lapply(head(order(citations, decreasing = TRUE), 10), function(idx) {
+  rec <- records[[idx]]
+  list(
+    record_id = as.character(rec$id %||% rec$record_id %||% idx),
+    title = as.character(rec$title %||% ""),
+    publication_year = rec$publication_year %||% NULL,
+    venue = as.character(rec$venue %||% ""),
+    cited_by_count = citations[[idx]]
+  )
+})
+
+author_citations <- list()
+author_documents <- list()
+for (idx in seq_along(records)) {
+  rec_authors <- authors_per_record[[idx]]
+  if (length(rec_authors) > 0) {
+    for (author in rec_authors) {
+      author <- as.character(author)
+      author_citations[[author]] <- c(author_citations[[author]] %||% c(), citations[[idx]])
+      author_documents[[author]] <- (author_documents[[author]] %||% 0L) + 1L
+    }
+  }
+}
+author_impact <- lapply(sort(names(author_citations)), function(author) {
+  vals <- author_citations[[author]]
+  list(
+    author = author,
+    documents = author_documents[[author]],
+    total_citations = sum(vals),
+    h_index = h_index(vals),
+    mean_citations = if (length(vals) > 0) mean(vals) else 0
+  )
+})
+author_impact <- author_impact[order(sapply(author_impact, function(x) x$total_citations), decreasing = TRUE)]
+
+source_impact <- lapply(sort(unique(venues)), function(venue) {
+  idxs <- which(venues == venue)
+  vals <- citations[idxs]
+  list(
+    venue = venue,
+    documents = length(idxs),
+    total_citations = sum(vals),
+    h_index = h_index(vals),
+    mean_citations = if (length(vals) > 0) mean(vals) else 0
+  )
+})
+source_impact <- source_impact[order(sapply(source_impact, function(x) x$total_citations), decreasing = TRUE)]
+
+bradford_zones <- list()
+venue_counts_desc <- top_n(venue_pubs, length(venue_pubs))
+if (length(venue_counts_desc) > 0) {
+  total_docs <- sum(sapply(venue_counts_desc, function(x) x$count))
+  target <- total_docs / 3
+  zone <- 1L
+  running <- 0
+  for (row in venue_counts_desc) {
+    if (running >= target && zone < 3L) {
+      zone <- zone + 1L
+      running <- 0
+    }
+    bradford_zones <- c(bradford_zones, list(list(
+      venue = row$value,
+      documents = row$count,
+      bradford_zone = zone
+    )))
+    running <- running + row$count
+  }
+}
 
 numeric_years <- as.integer(years[years != "unknown"])
 annual_growth_rate <- list()
@@ -153,7 +254,12 @@ summary <- list(
   mean_citations = mean_citations,
   median_citations = median_citations,
   most_cited_title = most_cited_title,
-  most_cited_citations = most_cited_count
+  most_cited_citations = most_cited_count,
+  corpus_h_index = h_index(citations),
+  keyword_count = length(unique(keywords_all)),
+  coauthor_edge_count = length(coauthor_network),
+  keyword_edge_count = length(keyword_cooccurrence),
+  source_h_index_max = if (length(source_impact) > 0) max(sapply(source_impact, function(x) x$h_index)) else 0
 )
 if (use_bibliometrix_pkg) {
   summary$bibliometrix_package <- bibliometrix_pkg_results
@@ -167,7 +273,13 @@ tables <- list(
   coauthor_network = coauthor_network,
   author_productivity = author_productivity,
   keyword_frequency = keyword_frequency,
-  annual_growth_rate = annual_growth_rate
+  keyword_cooccurrence = keyword_cooccurrence,
+  annual_growth_rate = annual_growth_rate,
+  citation_distribution = citation_distribution,
+  most_cited_records = most_cited_records,
+  author_impact = author_impact,
+  source_impact = source_impact,
+  bradford_zones = bradford_zones
 )
 
 figure_specs <- list(
@@ -191,13 +303,47 @@ figure_specs <- list(
     x = "papers_per_author",
     y = "author_count",
     data = tables$author_productivity
+  ),
+  citation_distribution = list(
+    kind = "line",
+    title = "Citation distribution percentiles",
+    x = "percentile",
+    y = "value",
+    data = tables$citation_distribution
+  ),
+  keyword_cooccurrence = list(
+    kind = "network",
+    title = "Keyword co-occurrence network",
+    source = "keyword_a",
+    target = "keyword_b",
+    weight = "weight",
+    data = tables$keyword_cooccurrence
+  ),
+  source_impact = list(
+    kind = "bar",
+    title = "Source impact by citations",
+    x = "venue",
+    y = "total_citations",
+    data = head(tables$source_impact, 10)
+  ),
+  bradford_zones = list(
+    kind = "stacked_bar",
+    title = "Bradford zones by source",
+    x = "venue",
+    y = "documents",
+    fill = "bradford_zone",
+    data = tables$bradford_zones
   )
 )
 
 rendered_figures <- list(
   annual_publications_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Annual publications figure generated from figure spec.</text></svg>",
   venue_publications_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Venue publications figure generated from figure spec.</text></svg>",
-  author_productivity_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Author productivity figure generated from figure spec.</text></svg>"
+  author_productivity_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Author productivity figure generated from figure spec.</text></svg>",
+  citation_distribution_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Citation distribution figure generated from figure spec.</text></svg>",
+  keyword_cooccurrence_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Keyword network figure generated from figure spec.</text></svg>",
+  source_impact_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Source impact figure generated from figure spec.</text></svg>",
+  bradford_zones_svg = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400\" height=\"120\"><text x=\"12\" y=\"24\">Bradford zones figure generated from figure spec.</text></svg>"
 )
 
 write_json(Sys.getenv("RWB_OUTPUT_summary"), summary)

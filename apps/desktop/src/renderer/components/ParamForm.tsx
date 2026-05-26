@@ -1,9 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import Form from "@rjsf/core";
 import validator from "@rjsf/validator-ajv8";
-import { Sparkles, Trash2, Info, AlertCircle } from "lucide-react";
+import { Sparkles, Trash2, Info, AlertCircle, KeyRound } from "lucide-react";
 import { useWorkspace } from "../store/workspace";
-import { moduleExtras, stageFor } from "../store/module-catalog";
+import {
+  applyDefaultLlmToParams,
+  defaultModelForProvider,
+  isLlmProvider,
+  moduleExtras,
+  PROVIDER_LABELS,
+  PROVIDER_MODELS,
+  stageFor,
+  type LlmProvider,
+} from "../store/module-catalog";
 
 const api = window.rwb;
 
@@ -23,6 +32,11 @@ function deriveUiSchema(schema: Record<string, unknown>): Record<string, unknown
 
   for (const [key, prop] of Object.entries(properties)) {
     const fieldUi: Record<string, unknown> = {};
+    if (key === "provider" || key === "model") {
+      fieldUi["ui:widget"] = "hidden";
+      uiSchema[key] = fieldUi;
+      continue;
+    }
     const examples = (prop as { examples?: unknown[] }).examples;
     if (Array.isArray(examples) && examples.length > 0) {
       const example = examples[0];
@@ -59,6 +73,8 @@ export function ParamForm() {
   const selectedNodeId = useWorkspace((s) => s.selectedNodeId);
   const updateNodeParams = useWorkspace((s) => s.updateNodeParams);
   const removePipelineNode = useWorkspace((s) => s.removePipelineNode);
+  const bundleOnlyMode = useWorkspace((s) => s.bundleOnlyMode);
+  const defaultLlm = useWorkspace((s) => s.defaultLlm);
   const [schema, setSchema] = useState<Record<string, unknown> | null>(null);
   const [schemaError, setSchemaError] = useState<string | null>(null);
 
@@ -70,6 +86,31 @@ export function ParamForm() {
   const stage = stageFor(selectedModule?.stage);
 
   const uiSchema = useMemo(() => (schema ? deriveUiSchema(schema) : { "ui:submitButtonOptions": { norender: true } }), [schema]);
+
+  const hasLlmConfig = useMemo(() => {
+    const properties = (schema as { properties?: Record<string, unknown> } | null)?.properties ?? {};
+    return Boolean(selectedModule?.llm?.required || properties.provider || properties.model || selectedNode?.params?.provider || selectedNode?.params?.model);
+  }, [schema, selectedModule?.llm?.required, selectedNode?.params?.model, selectedNode?.params?.provider]);
+
+  const currentProvider: LlmProvider = isLlmProvider(selectedNode?.params?.provider)
+    ? selectedNode.params.provider
+    : "anthropic";
+  const providerModels = PROVIDER_MODELS[currentProvider];
+  const currentModel = typeof selectedNode?.params?.model === "string"
+    ? selectedNode.params.model
+    : defaultModelForProvider(currentProvider);
+  const selectedModelOption = providerModels.includes(currentModel) ? currentModel : "__custom__";
+
+  function updateLlmConfig(next: Partial<{ provider: LlmProvider; model: string }>) {
+    if (!selectedNode) return;
+    const nextProvider = next.provider ?? currentProvider;
+    const nextModel = next.model ?? (next.provider ? defaultModelForProvider(nextProvider) : currentModel);
+    updateNodeParams(selectedNode.id, {
+      ...selectedNode.params,
+      provider: nextProvider,
+      model: nextModel,
+    });
+  }
 
   const missingFields = useMemo(() => {
     if (!schema) return [];
@@ -118,7 +159,7 @@ export function ParamForm() {
       <div className="paramHeader" style={{ borderTopColor: stage.color }}>
         <div className="paramTitleRow">
           <strong className="paramTitle">{selectedModule.name}</strong>
-          <button className="iconBtn danger" onClick={() => removePipelineNode(selectedNode.id)} title="Remove node">
+          <button className="iconBtn danger" onClick={() => removePipelineNode(selectedNode.id)} title="Remove node" disabled={bundleOnlyMode}>
             <Trash2 size={14} />
           </button>
         </div>
@@ -180,7 +221,8 @@ export function ParamForm() {
           {extras?.recommendedParams && Object.keys(extras.recommendedParams).length > 0 && (
             <button
               className="iconBtn small"
-              onClick={() => updateNodeParams(selectedNode.id, { ...(extras.recommendedParams ?? {}) })}
+              onClick={() => updateNodeParams(selectedNode.id, applyDefaultLlmToParams(extras.recommendedParams, defaultLlm))}
+              disabled={bundleOnlyMode}
               title="Replace current params with the recommended defaults"
             >
               <Sparkles size={12} /> Recommended defaults
@@ -200,12 +242,67 @@ export function ParamForm() {
         )}
         {extras?.recommendedNote && <p className="paramRecommendedNote">{extras.recommendedNote}</p>}
 
+        {hasLlmConfig && (
+          <section className="providerModelPanel" aria-label="LLM provider and model">
+            <div className="providerModelHeader">
+              <KeyRound size={14} />
+              <div>
+                <strong>LLM provider and model</strong>
+                <span>Choose the provider and exact model this node will call.</span>
+              </div>
+            </div>
+            <div className="providerModelGrid">
+              <label>
+                Provider
+                <select
+                  value={currentProvider}
+                  onChange={(e) => updateLlmConfig({ provider: e.target.value as LlmProvider })}
+                  disabled={bundleOnlyMode}
+                >
+                  {(Object.keys(PROVIDER_MODELS) as LlmProvider[]).map((provider) => (
+                    <option key={provider} value={provider}>{PROVIDER_LABELS[provider]}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Model
+                <select
+                  value={selectedModelOption}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    updateLlmConfig({ model: value === "__custom__" ? "" : value });
+                  }}
+                  disabled={bundleOnlyMode}
+                >
+                  {providerModels.map((model) => (
+                    <option key={model} value={model}>{model}</option>
+                  ))}
+                  <option value="__custom__">Custom model...</option>
+                </select>
+              </label>
+            </div>
+            {selectedModelOption === "__custom__" && (
+              <label className="customModelField">
+                Custom model id
+                <input
+                  type="text"
+                  value={currentModel}
+                  placeholder={defaultModelForProvider(currentProvider)}
+                  onChange={(e) => updateLlmConfig({ model: e.target.value })}
+                  disabled={bundleOnlyMode}
+                />
+              </label>
+            )}
+          </section>
+        )}
+
         {schema ? (
           <Form
             schema={schema}
             formData={selectedNode.params}
             validator={validator}
             onChange={(e) => { if (e.formData) updateNodeParams(selectedNode.id, e.formData); }}
+            disabled={bundleOnlyMode}
             uiSchema={uiSchema}
             liveValidate
             showErrorList={false}
@@ -218,6 +315,7 @@ export function ParamForm() {
               <textarea
                 value={JSON.stringify(selectedNode.params, null, 2)}
                 onChange={(e) => {
+                  if (bundleOnlyMode) return;
                   try { updateNodeParams(selectedNode.id, JSON.parse(e.target.value)); }
                   catch { /* ignore parse errors during typing */ }
                 }}

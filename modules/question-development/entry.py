@@ -61,9 +61,12 @@ def main() -> None:
         parsed = json.loads(response.get("text", "{}"))
         raw_questions = parsed.get("questions", [])
     except Exception as exc:
-        progress_update(50, f"LLM call failed; emitting placeholder. Reason: {exc}")
+        progress_update(50, f"LLM call failed; emitting conservative fallback question. Reason: {exc}")
         raw_questions = [
-            {"text": f"What evidence exists about: {topic}?", "rationale": "Fallback placeholder; LLM unavailable."}
+            {
+                "text": f"What evidence exists about {topic}, and which study characteristics should be extracted to evaluate it?",
+                "rationale": "Offline fallback generated because the LLM provider was unavailable; researcher review is required before freezing this question.",
+            }
         ]
 
     questions = []

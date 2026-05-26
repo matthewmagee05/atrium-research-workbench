@@ -17,8 +17,12 @@ def proxy_call(operation, payload):
         method="POST",
         headers={"content-type": "application/json"},
     )
-    with urllib.request.urlopen(request, timeout=120) as response:
-        return json.loads(response.read().decode("utf-8"))
+    try:
+        with urllib.request.urlopen(request, timeout=120) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        body = exc.read().decode("utf-8", errors="replace")
+        raise RuntimeError(f"proxy {operation} failed ({exc.code}): {body}") from exc
 
 
 def main() -> None:
@@ -26,6 +30,8 @@ def main() -> None:
         summary = json.load(handle)
     with open(os.environ["RWB_PARAMS"], "r", encoding="utf-8") as handle:
         params = json.load(handle)
+    with open(os.path.join(os.path.dirname(__file__), "prompts", "narrative_draft.md"), "r", encoding="utf-8") as handle:
+        prompt = handle.read()
     provider = params.get("provider")
     model = params.get("model")
     if provider and model:
@@ -34,7 +40,7 @@ def main() -> None:
             {
                 "binding": {"provider": provider, "model_id": model},
                 "messages": [
-                    {"role": "system", "content": "Draft concise manuscript results text from structured bibliometric summary data."},
+                    {"role": "system", "content": prompt},
                     {"role": "user", "content": json.dumps(summary, sort_keys=True)},
                 ],
                 "max_output_tokens": 800,

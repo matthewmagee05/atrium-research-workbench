@@ -1,0 +1,49 @@
+id: supplementary-bundle
+version: 0.1.0
+name: Supplementary Bundle
+description: Builds a manifest for supplementary materials included with a manuscript submission.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: manuscript
+    schema: schemas/anything.json
+    optional: true
+  - name: prisma_checklist
+    schema: schemas/anything.json
+    optional: true
+  - name: grade_table
+    schema: schemas/anything.json
+    optional: true
+  - name: rob_assessments
+    schema: schemas/anything.json
+    optional: true
+outputs:
+  - name: supplementary_manifest
+    schema: schemas/supplementary_manifest.json
+    description: Structured manifest of supplementary material artifacts.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Supplement manifest is derived from connected input file paths.
+  variance_sources: []
+  reproduction_metrics: [schema_validity]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

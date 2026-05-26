@@ -1,0 +1,39 @@
+id: forest-plot-figure
+version: 0.1.0
+name: Forest Plot Figure
+description: Converts a forest plot spec into deterministic SVG markup.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: forest_plot_spec
+    schema: schemas/forest_plot_spec.json
+outputs:
+  - name: forest_plot_figure
+    schema: schemas/figure.json
+    description: Rendered forest plot SVG packaged as a figure spec artifact.
+    output_kind: figure_spec
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: SVG markup is generated from the canonical forest_plot_spec.
+  variance_sources: []
+  reproduction_metrics: [schema_validity]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

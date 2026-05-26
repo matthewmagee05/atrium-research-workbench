@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "properties": {
+    "journal": {
+      "type": "string",
+      "default": "Target journal"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "anthropic",
+        "openai",
+        "ollama"
+      ],
+      "default": "anthropic"
+    },
+    "model": {
+      "type": "string",
+      "default": "claude-sonnet-4-20250514"
+    }
+  },
+  "additionalProperties": false
+}

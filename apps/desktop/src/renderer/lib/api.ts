@@ -63,9 +63,11 @@ if (!window.rwb) {
     exportBundle: async () => null,
     replayBundle: async () => ({}),
     importBundle: async () => null,
+    importBundleFromPath: async () => null,
     verifyBundle: async () => ({ ok: false, checked: [], trustReport: null }),
     inspectBundleTrust: async () => ({ allTrusted: false, modules: [], hashMismatches: [] }),
     diffArtifacts: async () => ({ ok: false, rowsA: 0, rowsB: 0 }),
+    exportReviewNotes: async () => "",
     onRunProgress: () => () => undefined,
   };
 }

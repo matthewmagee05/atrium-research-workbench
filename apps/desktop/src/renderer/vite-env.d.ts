@@ -22,6 +22,14 @@ export type CredentialTestPayload = {
   detail?: string;
 };
 
+export type ArtifactFetchPayload = {
+  meta: Record<string, unknown>;
+  content: unknown;
+  dataPath: string;
+  dir: string;
+  sizeBytes: number;
+};
+
 declare global {
   interface Window {
     rwb?: {
@@ -45,9 +53,13 @@ declare global {
       exportBundle: (projectDir: string) => Promise<string | null>;
       replayBundle: (bundlePath: string) => Promise<unknown>;
       importBundle: () => Promise<string | null>;
+      importBundleFromPath: (bundlePath: string) => Promise<string | null>;
       verifyBundle: (bundlePath: string, options?: { trusted?: boolean }) => Promise<{ ok: boolean; checked: Array<{ node_id: string; port: string; expected: string; actual: string; ok: boolean }>; trustReport: unknown }>;
       inspectBundleTrust: (bundlePath: string) => Promise<{ allTrusted: boolean; modules: Array<{ moduleId: string; bundledVersion: string; localVersion?: string; status: string }>; hashMismatches: Array<{ moduleId: string }> }>;
       diffArtifacts: (artifactIdA: string, artifactIdB: string, projectDir: string) => Promise<{ ok: boolean; rowsA: number; rowsB: number; diffPath?: string; diff?: string }>;
+      getArtifact: (projectDir: string, artifactId: string) => Promise<ArtifactFetchPayload>;
+      revealArtifact: (projectDir: string, artifactId: string) => Promise<string>;
+      exportReviewNotes: (projectDir: string, notes: Array<Record<string, unknown>>) => Promise<string>;
       onRunProgress: (handler: (event: RunProgressPayload) => void) => () => void;
     };
   }

@@ -52,11 +52,11 @@ LLM calls are routed through a per-node proxy process. Provider credentials are 
 
 The proxy child process is the only place credentials live. Module subprocesses get a filtered environment via `filterEnvForModule()`:
 
-**Always allowed**: `PATH`, `HOME`, `LANG`, `LC_*`, `TZ`, language runtime vars (`PYTHONPATH`, `R_HOME`, `NODE_PATH`, etc.), every `RWB_*` var the runner sets explicitly.
+**Always allowed**: `PATH`, `HOME`, `LANG`, `LC_*`, `TZ`, language runtime vars (`PYTHONPATH`, `R_HOME`, `NODE_PATH`, etc.), every `RWB_*` var. Operator-supplied non-LLM integration credentials must use explicit `RWB_*` names such as `RWB_UNPAYWALL_EMAIL`, `RWB_ZOTERO_API_KEY`, `RWB_SEMANTIC_SCHOLAR_API_KEY`, `RWB_OSF_TOKEN`, `RWB_ZENODO_TOKEN`, or `RWB_FIGSHARE_TOKEN`.
 
 **Always blocked**: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GITHUB_TOKEN`, `GH_TOKEN`, anything matching `*_SECRET`, `*_PASSWORD`, `*_PRIVATE_KEY`, or any name not on the allowlist.
 
-This means: even if a module's `entry.py` tries to read `os.environ["ANTHROPIC_API_KEY"]`, it gets nothing. It must call the proxy.
+This means: even if a module's `entry.py` tries to read `os.environ["ANTHROPIC_API_KEY"]`, it gets nothing. It must call the proxy. External source modules that need non-LLM credentials must use documented `RWB_*` variables so the operator can see exactly what is being exposed to module code.
 
 ## Module subprocess hardening
 
@@ -100,9 +100,11 @@ RWB_SANDBOX=on rwb run protocol.yaml
 
 A per-spawn sandbox profile is written to `$TMPDIR/rwb-sandbox-<pid>-<ts>.sb` and removed after the module exits. The profile denies all writes except to the scratch directory and `$TMPDIR`, and denies network when the module declares `network: false`.
 
-### Windows: AppContainer (not yet implemented)
+### Windows: low-integrity or restricted PowerShell
 
-Windows hardening lands in a future tier.
+On Windows, Atrium first looks for Sysinternals `psexec` and wraps modules with `psexec -l`, which runs the child at Low integrity. If `psexec` is unavailable, it falls back to a restricted PowerShell launcher that sets the scratch directory as the working directory and attempts to block outbound network egress when the module declares `network: false`.
+
+This is useful hardening, but it is not a true AppContainer. A restricted-token AppContainer implementation remains a future hardening item.
 
 ### Tradeoffs
 
@@ -110,7 +112,7 @@ Sandboxing is genuinely defensive but adds:
 
 - ~100ms startup per module subprocess.
 - Stricter filesystem semantics — modules that try to write outside the scratch directory will hit permission errors.
-- Network calls fail even for modules that declare `network: true`, unless the sandbox profile allows them.
+- Network calls can fail under sandboxing when the OS profile does not allow the requested egress.
 
 For trusted golden-pipeline tests, sandboxing is left off by default. Production deployments should set `RWB_SANDBOX=on` or `RWB_SANDBOX=required`.
 

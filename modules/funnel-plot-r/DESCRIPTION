@@ -1,0 +1,7 @@
+Package: funnel-plot-r-module
+Type: Package
+Title: Funnel Plot R
+Version: 0.1.0
+Imports:
+    jsonlite
+

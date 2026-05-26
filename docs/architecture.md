@@ -106,4 +106,4 @@ See [trust-and-safety.md](trust-and-safety.md) for the full security model:
 - Module subprocesses have a 10-minute default timeout and a 50MB output buffer.
 - Per-language virtualenv isolation is detected automatically (`.venv/` for Python, `renv/library/` for R).
 
-The current sandbox is advisory (env filter + timeout). OS-level isolation (`bwrap`, `sandbox-exec`, AppContainer) is a future hardening item.
+The default sandbox remains advisory (env filter + timeout), and opt-in OS wrapping is available through `RWB_SANDBOX`. Linux uses `bwrap` when present, macOS uses `sandbox-exec`, and Windows uses Low-integrity `psexec` or a restricted PowerShell fallback. A true Windows AppContainer remains a future hardening item.

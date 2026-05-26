@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "required": ["records"],
+  "properties": {
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "doi", "sections"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "doi": {"type": "string"},
+          "sections": {"type": "object", "additionalProperties": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

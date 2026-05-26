@@ -4,6 +4,8 @@ import path from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   createReviewItem,
+  exportReviewQueue,
+  importReviewQueue,
   initProject,
   listReviewItems,
   llmComplete,
@@ -127,6 +129,18 @@ describe("review queue", () => {
     expect(resolved.decision!.decided_by).toBe("reviewer@example.com");
   });
 
+  it("normalizes reviewer ORCID aliases on resolved decisions", () => {
+    const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-review-"));
+    initProject(projectDir);
+    const item = createReviewItem(projectDir, { data: "test" }, { type: "object" }, { nodeId: "n1", runId: "r1" });
+    const resolved = resolveReviewItem(projectDir, item.id, {
+      accepted: true,
+      orcid: "0000-0002-1825-0097",
+      decided_by: "reviewer@example.com"
+    });
+    expect(resolved.decision!.reviewer_orcid).toBe("0000-0002-1825-0097");
+  });
+
   it("resolvedDecisionsForNode returns decisions for a specific run/node", () => {
     const projectDir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-review-"));
     initProject(projectDir);
@@ -149,5 +163,40 @@ describe("review queue", () => {
 
     const decisionsNone = resolvedDecisionsForNode(projectDir, "run1", "nonexistent");
     expect(decisionsNone).toHaveLength(0);
+  });
+
+  it("exports and imports review queue snapshots with timestamp conflict resolution", () => {
+    const sourceDir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-review-source-"));
+    const targetDir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-review-target-"));
+    initProject(sourceDir);
+    initProject(targetDir);
+
+    const local = createReviewItem(targetDir, { idx: "local-old" }, { type: "object" }, { nodeId: "nodeA", runId: "run1" });
+    const source = createReviewItem(sourceDir, { idx: "incoming" }, { type: "object" }, { nodeId: "nodeA", runId: "run1" });
+
+    resolveReviewItem(targetDir, local.id, {
+      accepted: false,
+      decision_type: "defer",
+      decided_at: "2024-01-01T00:00:00.000Z"
+    });
+    resolveReviewItem(sourceDir, source.id, {
+      accepted: true,
+      decision_type: "accept",
+      decided_at: "2024-01-02T00:00:00.000Z",
+      reviewer_orcid: "0000-0002-1825-0097"
+    });
+
+    const snapshotPath = path.join(os.tmpdir(), `rwb-review-${Date.now()}.json`);
+    const snapshot = exportReviewQueue(sourceDir, snapshotPath);
+    const incoming = snapshot.items[0];
+    const localItems = listReviewItems(targetDir);
+    snapshot.items = [{ ...incoming, id: localItems[0].id }];
+    fs.writeFileSync(snapshotPath, JSON.stringify(snapshot, null, 2), "utf8");
+
+    const result = importReviewQueue(targetDir, snapshotPath);
+    expect(result).toEqual({ imported: 0, updated: 1, skipped: 0 });
+    const updated = listReviewItems(targetDir, "resolved")[0];
+    expect(updated.decision!.decision_type).toBe("accept");
+    expect(updated.decision!.reviewer_orcid).toBe("0000-0002-1825-0097");
   });
 });

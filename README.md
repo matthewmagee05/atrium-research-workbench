@@ -25,6 +25,7 @@ Current verified paths:
 
 - Tier 0 replay/verify spike.
 - Tier 1A fixture bibliometric pipeline with R subprocess support, `corpus.lock.json`, `METHODS.md`, and `environment.lock`.
-- Tier 1B desktop shell build.
+- Tier 1B desktop workbench with editable LLM provider/model controls, live run status, reviewer-mode bundle verification, and annotation export.
+- Later-tier full-text, substantive-analysis, reference-manager, systematic-review-platform, archiving, and publication-output modules in fixture/snapshot-safe form.
 
-Later-tier modules are represented as manifests/placeholders where the full human-review and sandboxing surfaces are not yet production-complete.
+Live external integrations default to archived or dry-run behavior unless credentials and explicit live-mode parameters are supplied. Bundle replay remains offline-first.

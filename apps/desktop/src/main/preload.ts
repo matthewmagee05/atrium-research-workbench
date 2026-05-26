@@ -21,9 +21,13 @@ contextBridge.exposeInMainWorld("rwb", {
   exportBundle: (projectDir: string) => ipcRenderer.invoke("rwb:bundle:export", projectDir),
   replayBundle: (bundlePath: string) => ipcRenderer.invoke("rwb:bundle:replay", bundlePath),
   importBundle: () => ipcRenderer.invoke("rwb:bundle:import"),
+  importBundleFromPath: (bundlePath: string) => ipcRenderer.invoke("rwb:bundle:importPath", bundlePath),
   verifyBundle: (bundlePath: string, options?: { trusted?: boolean }) => ipcRenderer.invoke("rwb:bundle:verify", bundlePath, options),
   inspectBundleTrust: (bundlePath: string) => ipcRenderer.invoke("rwb:bundle:trust", bundlePath),
   diffArtifacts: (artifactIdA: string, artifactIdB: string, projectDir: string) => ipcRenderer.invoke("rwb:artifacts:diff", artifactIdA, artifactIdB, projectDir),
+  getArtifact: (projectDir: string, artifactId: string) => ipcRenderer.invoke("rwb:artifacts:get", projectDir, artifactId),
+  revealArtifact: (projectDir: string, artifactId: string) => ipcRenderer.invoke("rwb:artifacts:reveal", projectDir, artifactId),
+  exportReviewNotes: (projectDir: string, notes: unknown[]) => ipcRenderer.invoke("rwb:review:exportNotes", projectDir, notes),
   onRunProgress: (handler: (event: unknown) => void) => {
     const listener = (_e: Electron.IpcRendererEvent, payload: unknown) => handler(payload);
     ipcRenderer.on("rwb:run:progress", listener);

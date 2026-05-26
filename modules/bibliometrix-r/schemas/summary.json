@@ -13,6 +13,11 @@
     "median_citations": {"type": "number"},
     "most_cited_title": {"type": "string"},
     "most_cited_citations": {"type": "number"},
+    "corpus_h_index": {"type": "integer"},
+    "keyword_count": {"type": "integer"},
+    "coauthor_edge_count": {"type": "integer"},
+    "keyword_edge_count": {"type": "integer"},
+    "source_h_index_max": {"type": "integer"},
     "bibliometrix_package": {
       "type": "object",
       "additionalProperties": true

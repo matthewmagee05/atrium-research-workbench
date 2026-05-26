@@ -12,6 +12,10 @@ import { BudgetDrawer } from "./components/BudgetDrawer";
 import { FirstRunFlow } from "./components/FirstRunFlow";
 import { SettingsDialog } from "./components/SettingsDialog";
 import { NextStepsPanel } from "./components/NextStepsPanel";
+import { ReviewerNotesPanel } from "./components/ReviewerNotesPanel";
+import { ArtifactViewer } from "./components/ArtifactViewer";
+import { GuidedFlow } from "./components/GuidedFlow";
+import { SaveTemplateDialog } from "./components/SaveTemplateDialog";
 import "reactflow/dist/style.css";
 import "./styles.css";
 
@@ -27,6 +31,8 @@ function App() {
   const selectedNodeId = useWorkspace((s) => s.selectedNodeId);
   const setSelectedNodeId = useWorkspace((s) => s.setSelectedNodeId);
   const modules = useWorkspace((s) => s.modules);
+  const bundleOnlyMode = useWorkspace((s) => s.bundleOnlyMode);
+  const appMode = useWorkspace((s) => s.appMode);
 
   useEffect(() => {
     api
@@ -79,19 +85,37 @@ function App() {
     );
   }
 
+  if (appMode === "guided") {
+    return (
+      <div className={`app guided ${bundleOnlyMode ? "bundleOnly" : ""}`}>
+        <Topbar />
+        <main className="guidedMain">
+          <GuidedFlow />
+        </main>
+        <BudgetDrawer />
+        <SettingsDialog />
+        <ArtifactViewer />
+        <SaveTemplateDialog />
+      </div>
+    );
+  }
+
   return (
-    <div className="app">
+    <div className={`app ${bundleOnlyMode ? "bundleOnly" : ""}`}>
       <Topbar />
       <main className="workbench">
         <ModuleLibrary />
         <div className="canvasColumn">
           <PipelineCanvas />
+          <ReviewerNotesPanel />
           <NextStepsPanel />
         </div>
         <Inspector />
       </main>
       <BudgetDrawer />
       <SettingsDialog />
+      <ArtifactViewer />
+      <SaveTemplateDialog />
     </div>
   );
 }

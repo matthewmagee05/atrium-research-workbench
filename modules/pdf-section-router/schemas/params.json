@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "snapshot_path": {"type": "string"},
+    "sections": {"type": "array", "items": {"type": "string"}, "default": ["methods", "results", "discussion"]}
+  },
+  "additionalProperties": false
+}

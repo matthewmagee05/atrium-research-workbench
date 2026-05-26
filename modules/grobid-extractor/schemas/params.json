@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "snapshot_path": {"type": "string"},
+    "grobid_url": {"type": "string", "default": "http://localhost:8070/api/processFulltextDocument"},
+    "grobid_image": {"type": "string", "default": "lfoppiano/grobid:0.8.0"}
+  },
+  "additionalProperties": false
+}

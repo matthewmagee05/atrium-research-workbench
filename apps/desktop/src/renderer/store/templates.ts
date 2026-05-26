@@ -9,6 +9,8 @@ export interface PipelineTemplate {
   goodFor: string;
   nodes: PipelineNode[];
   edges: PipelineEdge[];
+  custom?: boolean;
+  savedAt?: number;
 }
 
 let counter = 0;
@@ -73,15 +75,15 @@ export const TEMPLATES: PipelineTemplate[] = [
     },
     [
       // Top row: question → hypothesis → preregistration
-      { moduleId: "question-development", params: { topic: "" }, position: { x: 40, y: 60 } },
-      { moduleId: "hypothesis-drafter", params: { max_hypotheses: 5 }, position: { x: 280, y: 60 }, from: [{ sourceIndex: 0, sourcePort: "questions", targetPort: "questions" }] },
-      { moduleId: "preregistration-generator", params: { template: "osf-standard" }, position: { x: 520, y: 60 }, from: [{ sourceIndex: 1, sourcePort: "hypotheses", targetPort: "hypotheses" }] },
+      { moduleId: "question-development", params: { topic: "", max_questions: 5, provider: "anthropic", model: "claude-sonnet-4-20250514" }, position: { x: 40, y: 60 } },
+      { moduleId: "hypothesis-drafter", params: { max_hypotheses: 5, provider: "anthropic", model: "claude-sonnet-4-20250514" }, position: { x: 280, y: 60 }, from: [{ sourceIndex: 0, sourcePort: "questions", targetPort: "questions" }] },
+      { moduleId: "preregistration-generator", params: { template: "osf-standard", provider: "anthropic", model: "claude-sonnet-4-20250514" }, position: { x: 520, y: 60 }, from: [{ sourceIndex: 1, sourcePort: "hypotheses", targetPort: "hypotheses" }] },
 
       // Middle row: source → normalize → dedupe → screen → prisma
       { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 40, y: 320 } },
       { moduleId: "record-normalizer", params: {}, position: { x: 280, y: 320 }, from: [{ sourceIndex: 3, sourcePort: "records", targetPort: "records" }] },
       { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 520, y: 320 }, from: [{ sourceIndex: 4, sourcePort: "normalized", targetPort: "normalized" }] },
-      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7 }, position: { x: 760, y: 320 }, from: [{ sourceIndex: 5, sourcePort: "deduped", targetPort: "records" }] },
+      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7, provider: "anthropic", model: "claude-sonnet-4-20250514" }, position: { x: 760, y: 320 }, from: [{ sourceIndex: 5, sourcePort: "deduped", targetPort: "records" }] },
       { moduleId: "prisma-flow", params: {}, position: { x: 1000, y: 320 }, from: [{ sourceIndex: 6, sourcePort: "screening_decisions", targetPort: "screening_decisions" }] },
 
       // Bottom row: bibliometric + narrative
@@ -94,7 +96,7 @@ export const TEMPLATES: PipelineTemplate[] = [
           { sourceIndex: 5, sourcePort: "corpus_lock", targetPort: "corpus_lock" },
         ],
       },
-      { moduleId: "narrative-drafter", params: {}, position: { x: 1000, y: 580 }, from: [{ sourceIndex: 8, sourcePort: "summary", targetPort: "summary" }] },
+      { moduleId: "narrative-drafter", params: { provider: "anthropic", model: "claude-sonnet-4-20250514" }, position: { x: 1000, y: 580 }, from: [{ sourceIndex: 8, sourcePort: "summary", targetPort: "summary" }] },
     ],
   ),
   makeTemplate(
@@ -115,7 +117,7 @@ export const TEMPLATES: PipelineTemplate[] = [
       { moduleId: "openalex-source", params: { source_mode: "fixture", fixture_id: "tiny-corpus" }, position: { x: 40, y: 120 } },
       { moduleId: "record-normalizer", params: {}, position: { x: 280, y: 120 }, from: [{ sourceIndex: 0, sourcePort: "records", targetPort: "records" }] },
       { moduleId: "deterministic-dedupe", params: { doi_match: true, title_similarity_threshold: 0.95, author_overlap_threshold: 0.5 }, position: { x: 520, y: 120 }, from: [{ sourceIndex: 1, sourcePort: "normalized", targetPort: "normalized" }] },
-      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7 }, position: { x: 760, y: 120 }, from: [{ sourceIndex: 2, sourcePort: "deduped", targetPort: "records" }] },
+      { moduleId: "llm-screener", params: { inclusion_criteria: ["topic relevant"], exclusion_criteria: ["off topic"], confidence_threshold: 0.7, provider: "anthropic", model: "claude-sonnet-4-20250514" }, position: { x: 760, y: 120 }, from: [{ sourceIndex: 2, sourcePort: "deduped", targetPort: "records" }] },
       { moduleId: "prisma-flow", params: {}, position: { x: 1000, y: 120 }, from: [{ sourceIndex: 3, sourcePort: "screening_decisions", targetPort: "screening_decisions" }] },
     ],
   ),
@@ -173,4 +175,37 @@ export function instantiateTemplate(template: PipelineTemplate): { nodes: Pipeli
     target: idMap.get(e.target) ?? e.target,
   }));
   return { nodes, edges };
+}
+
+/**
+ * Build a PipelineTemplate from the current canvas state. Steps + LLM-call
+ * estimate are auto-summarized from the modules; callers can override later.
+ */
+export function templateFromPipeline(
+  pipelineNodes: PipelineNode[],
+  pipelineEdges: PipelineEdge[],
+  modules: Array<{ id: string; name?: string; llm?: { required?: boolean } }>,
+  meta: { name: string; description: string; goodFor?: string },
+): PipelineTemplate {
+  const steps = pipelineNodes.map((n) => {
+    const mod = modules.find((m) => m.id === n.moduleId);
+    return mod?.name ?? n.moduleId;
+  });
+  const llmNodes = pipelineNodes.filter((n) => modules.find((m) => m.id === n.moduleId)?.llm?.required).length;
+  const llmCalls = llmNodes === 0
+    ? "Zero. Fully deterministic."
+    : `Approximately ${llmNodes} LLM-using step(s). Cost scales with corpus size for record-level steps.`;
+  // Deep-copy so future canvas edits don't mutate the saved template.
+  return {
+    id: `user-tpl-${Date.now().toString(36)}`,
+    name: meta.name,
+    description: meta.description,
+    goodFor: meta.goodFor ?? "Custom pipeline saved from the workbench.",
+    llmCalls,
+    steps,
+    nodes: JSON.parse(JSON.stringify(pipelineNodes)) as PipelineNode[],
+    edges: JSON.parse(JSON.stringify(pipelineEdges)) as PipelineEdge[],
+    custom: true,
+    savedAt: Date.now(),
+  };
 }

@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "tool": {"type": "string", "enum": ["rob2", "robins-i"], "default": "rob2"},
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "snapshot_path": {"type": "string"}
+  },
+  "additionalProperties": false
+}

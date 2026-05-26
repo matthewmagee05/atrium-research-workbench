@@ -18,6 +18,10 @@ The product **stops too early**. A real research workflow continues past "narrat
 
 This PRD scopes those gaps into discrete, deliverable features.
 
+## Implementation status update
+
+The remaining-feature pass now has fixture-safe module contracts and desktop catalog entries for F1-F8. Live integrations are intentionally conservative: fixture and snapshot modes run offline; `live_archived` source modules archive raw API responses; OSF, Zenodo, and Figshare deposit modules default to dry-run request payloads and require both `submit_live: true` and an explicit `RWB_*` token before creating draft records. Reviewer mode is available from the welcome drop-zone and keeps imported bundles read-only while allowing verification and reviewer annotations.
+
 ## 2. What's complete today
 
 | Capability | Status |
@@ -172,9 +176,9 @@ These are explicit API integrations. Each needs: API key handling in the existin
 
 **Features (Tier 5, not soon)**:
 
-- **Sync layer**: project directory syncs through Git LFS or a custom store; conflicts on `review_queue.json` resolve by ID + timestamp.
-- **Author attribution**: every artifact's `human_decisions` records the reviewer by ORCID.
-- **Shared screening UI**: assign records to reviewers, capture two-reviewer concordance, surface disagreements for adjudication.
+- **Sync layer**: project directory syncs through Git LFS or a custom store; conflicts on `review_queue.json` resolve by ID + timestamp. Atrium now has CLI-level review queue snapshot export/import with that conflict rule.
+- **Author attribution**: every artifact's `human_decisions` records the reviewer by ORCID. Atrium now preserves `reviewer_orcid` on review decisions, and resolved node decisions are attached to artifact metadata.
+- **Shared screening UI**: assign records to reviewers, capture two-reviewer concordance, surface disagreements for adjudication. Atrium now exposes the review queue in the desktop inspector with reviewer identity, ORCID attribution, and accept/reject/defer actions; reviewer assignment and concordance dashboards remain future work.
 
 This is genuinely a different product surface and should be tackled only after F1-F6 land.
 
@@ -185,8 +189,8 @@ These are real gaps the audit caught:
 - **Cache hit/miss test coverage**: add explicit tests for cache invalidation on prompt change and resolved-model-id change.
 - **`external_api_calls` for crossref + semantic-scholar**: OpenAlex archives raw responses; the other two should too.
 - **Windows AppContainer**: current Windows sandbox is PowerShell + low-integrity; a true AppContainer with restricted token would be stronger.
-- **Code-signing certificates**: `release.yml` is wired but signing secrets aren't configured. Production releases need real certs.
-- **Workflow modules (`question-development`, `hypothesis-drafter`, `preregistration-generator`)** have working LLM proxy calls but thin prompt templates. Real Tier 4 use needs better prompts + iterative refinement.
+- **Code-signing certificates**: `release.yml` now fails production macOS/Windows packaging unless signing secrets are configured; the actual certificates still need to be provisioned in repository secrets by the release owner.
+- **Workflow modules (`question-development`, `hypothesis-drafter`, `preregistration-generator`)** now have fuller protocol-aware prompts and conservative offline fallbacks. Future Tier 4 work can still add iterative refinement loops and richer reviewer UX.
 
 ## 5. Prioritization
 
@@ -280,4 +284,16 @@ After Tier C:
 
 ---
 
-**Next concrete step**: Confirm the "Vetratek" reference and pick the top 3 Tier A modules to start (proposed: `unpaywall-source` + `pdf-fetcher` + `grobid-extractor`, since they unblock everything else).
+## 11. Implementation status
+
+Tier A now has functional contracts and fixture-mode implementations for:
+
+- Full text: `unpaywall-source`, `pdf-fetcher`, `grobid-extractor`, `pdf-section-router`, `table-extractor`, `citation-resolver`.
+- Analysis and quality: `meta-analysis-r`, `risk-of-bias`, `grade-assessor`, `prisma-2020-checklist`.
+- Publication outputs: `manuscript-formatter`, `prisma-flow-figure`, `forest-plot-figure`, `supplementary-bundle`, `citation-export`.
+
+Publication outputs have been expanded with journal-style manuscript scaffolding, title-page metadata, submission checklists, hash-verifiable supplement manifests, and BibTeX/RIS/CSL citation exports. `bibliometrix-r` now emits richer deterministic bibliometric artifacts: citation distributions, most-cited records, author/source impact, keyword co-occurrence, Bradford zones, and canonical figure specs.
+
+The desktop catalog exposes these modules with recommended parameters. Fixture-mode tests cover the full-text path, RoB/GRADE outputs, publication outputs, reviewer UI, and richer bibliometric golden hashes.
+
+Still pending for this PRD: real-time multi-device sync, reviewer assignment/concordance dashboards, true Windows AppContainer hardening, vendor certification/account-level acceptance testing for live repository/platform integrations, and the actual production signing certificates/secrets owned outside the repository.

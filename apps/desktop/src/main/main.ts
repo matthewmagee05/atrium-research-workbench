@@ -1,8 +1,9 @@
 import path from "node:path";
 import fs from "node:fs";
 import YAML from "yaml";
-import { app, BrowserWindow, dialog, ipcMain } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import {
+  ArtifactStore,
   diffArtifacts,
   exportBundle,
   freezeProtocol,
@@ -160,6 +161,17 @@ ipcMain.handle("rwb:bundle:import", async (_event) => {
   return destDir;
 });
 
+ipcMain.handle("rwb:bundle:importPath", async (_event, bundlePath: string) => {
+  if (!bundlePath || !fs.existsSync(bundlePath)) {
+    throw new Error(`Bundle path not found: ${bundlePath}`);
+  }
+  const destResult = await dialog.showOpenDialog({ properties: ["openDirectory", "createDirectory"] });
+  if (destResult.canceled || destResult.filePaths.length === 0) return null;
+  const destDir = destResult.filePaths[0];
+  importBundle(bundlePath, destDir);
+  return destDir;
+});
+
 ipcMain.handle("rwb:bundle:verify", (_event, bundlePath: string, options?: { trusted?: boolean }) =>
   verifyBundle(bundlePath, { trusted: options?.trusted, localModulesRoot: corePaths.modulesRoot })
 );
@@ -171,3 +183,55 @@ ipcMain.handle("rwb:bundle:trust", (_event, bundlePath: string) =>
 ipcMain.handle("rwb:artifacts:diff", (_event, artifactIdA: string, artifactIdB: string, projectDir: string) =>
   diffArtifacts(projectDir, artifactIdA, artifactIdB)
 );
+
+ipcMain.handle("rwb:artifacts:get", (_event, projectDir: string, artifactId: string) => {
+  if (!projectDir) throw new Error("Open a project before viewing artifacts");
+  const store = new ArtifactStore(projectDir);
+  try {
+    const meta = store.getMeta(artifactId);
+    const dataPath = store.dataPath(artifactId);
+    const raw = fs.readFileSync(dataPath, "utf8");
+    let content: unknown;
+    try {
+      content = JSON.parse(raw);
+    } catch {
+      content = raw;
+    }
+    return {
+      meta,
+      content,
+      dataPath,
+      dir: path.dirname(dataPath),
+      sizeBytes: Buffer.byteLength(raw, "utf8"),
+    };
+  } finally {
+    store.close();
+  }
+});
+
+ipcMain.handle("rwb:artifacts:reveal", (_event, projectDir: string, artifactId: string) => {
+  if (!projectDir) throw new Error("Open a project before revealing artifacts");
+  const store = new ArtifactStore(projectDir);
+  try {
+    const dataPath = store.dataPath(artifactId);
+    shell.showItemInFolder(dataPath);
+    return dataPath;
+  } finally {
+    store.close();
+  }
+});
+
+ipcMain.handle("rwb:review:exportNotes", async (_event, projectDir: string, notes: unknown[]) => {
+  if (!projectDir) throw new Error("Open or import a project before exporting reviewer notes");
+  const output = path.join(projectDir, "review.md");
+  const body = [
+    "# Reviewer Notes",
+    "",
+    ...(Array.isArray(notes) ? notes : []).map((note) => {
+      const row = note as { artifactId?: string; note?: string; createdAt?: string };
+      return `## ${row.artifactId || "General"}\n\n- Created: ${row.createdAt || new Date().toISOString()}\n- Note: ${row.note || ""}\n`;
+    }),
+  ].join("\n");
+  fs.writeFileSync(output, body, "utf8");
+  return output;
+});

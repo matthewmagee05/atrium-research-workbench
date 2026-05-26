@@ -16,6 +16,8 @@ The `rwb` CLI exposes the same orchestration core as the desktop app, intended f
 | `rwb journal add <text> [--node=<node-id>] [--project-dir=<dir>]` | Append an entry to the run journal. |
 | `rwb review list [--status=pending\|resolved] [--project-dir=<dir>]` | Print the review queue. |
 | `rwb review resolve <review-id> --decision='<json>' [--project-dir=<dir>]` | Resolve a review with a structured decision (accept/reject/override/edit/defer/custom). |
+| `rwb collaboration export-review-queue --project-dir=<dir> --output=<path>` | Export a deterministic review queue snapshot for out-of-band team sync. |
+| `rwb collaboration import-review-queue <snapshot-path> --project-dir=<dir>` | Merge a review queue snapshot by review id and latest timestamp. |
 | `rwb methods generate <project-dir>` | Generate `methods.md` from the run manifest and module metadata. |
 | `rwb env lock <project-dir>` | Capture runtime versions to `environment.lock.json`. |
 | `rwb bundle export <project-dir> --output=<path>` | Produce a self-contained bundle. |

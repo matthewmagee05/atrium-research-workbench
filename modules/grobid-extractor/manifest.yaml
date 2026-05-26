@@ -1,0 +1,39 @@
+id: grobid-extractor
+version: 0.1.0
+name: GROBID Extractor
+description: Converts cached PDFs into TEI-like structured documents, using local GROBID when configured.
+stage: extract
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: pdf_manifest
+    schema: schemas/pdf_manifest.json
+outputs:
+  - name: tei_documents
+    schema: schemas/tei_documents.json
+    description: TEI XML text and parsed metadata per PDF.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Deterministic when the configured GROBID image/model version is fixed in environment.lock.
+  variance_sources: [grobid_model_version]
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: true
+  network_domains: [localhost, "127.0.0.1"]
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://grobid.readthedocs.io/

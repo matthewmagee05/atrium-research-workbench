@@ -1,4 +1,83 @@
 import { create } from "zustand";
+import { applyDefaultLlmToParams, isLlmProvider, type DefaultLlm } from "./module-catalog";
+import type { PipelineTemplate } from "./templates";
+
+const DEFAULT_LLM_STORAGE_KEY = "rwb.defaultLlm.v1";
+const APP_MODE_STORAGE_KEY = "rwb.appMode.v1";
+const CUSTOM_TEMPLATES_STORAGE_KEY = "rwb.customTemplates.v1";
+
+function readCustomTemplatesFromStorage(): PipelineTemplate[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(CUSTOM_TEMPLATES_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((t): t is PipelineTemplate =>
+      !!t && typeof t === "object" && typeof t.id === "string" && Array.isArray(t.nodes) && Array.isArray(t.edges));
+  } catch {
+    return [];
+  }
+}
+
+function writeCustomTemplatesToStorage(value: PipelineTemplate[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CUSTOM_TEMPLATES_STORAGE_KEY, JSON.stringify(value));
+  } catch {
+    // localStorage unavailable / quota exceeded
+  }
+}
+
+export type AppMode = "guided" | "builder";
+
+function readAppModeFromStorage(): AppMode {
+  if (typeof window === "undefined") return "guided";
+  try {
+    const raw = window.localStorage.getItem(APP_MODE_STORAGE_KEY);
+    if (raw === "builder" || raw === "guided") return raw;
+  } catch {
+    // localStorage unavailable
+  }
+  return "guided";
+}
+
+function writeAppModeToStorage(value: AppMode): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(APP_MODE_STORAGE_KEY, value);
+  } catch {
+    // localStorage unavailable
+  }
+}
+
+function readDefaultLlmFromStorage(): DefaultLlm | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DEFAULT_LLM_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { provider?: unknown; model?: unknown };
+    if (!isLlmProvider(parsed.provider) || typeof parsed.model !== "string" || !parsed.model) {
+      return null;
+    }
+    return { provider: parsed.provider, model: parsed.model };
+  } catch {
+    return null;
+  }
+}
+
+function writeDefaultLlmToStorage(value: DefaultLlm | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (value) {
+      window.localStorage.setItem(DEFAULT_LLM_STORAGE_KEY, JSON.stringify(value));
+    } else {
+      window.localStorage.removeItem(DEFAULT_LLM_STORAGE_KEY);
+    }
+  } catch {
+    // localStorage may be unavailable (private mode, etc.) - safe to ignore
+  }
+}
 
 export type ModuleManifest = {
   id: string;
@@ -30,6 +109,7 @@ export type PipelineEdge = {
 };
 
 export type RunMode = "execute" | "deterministic-rerun" | "full-rerun" | "variance-audit";
+export type WorkspaceView = "setup" | "pipeline" | "run" | "review" | "results" | "publish" | "reviewer";
 
 export type BudgetSnapshot = {
   totalCalls: number;
@@ -78,6 +158,14 @@ interface WorkspaceState {
   credentialStatus: { anthropic: boolean; openai: boolean; ollama: boolean };
   settingsOpen: boolean;
   showNextSteps: boolean;
+  bundleOnlyMode: boolean;
+  activeView: WorkspaceView;
+  reviewerNotes: Array<{ artifactId: string; note: string; createdAt: string }>;
+  defaultLlm: DefaultLlm | null;
+  viewerArtifactId: string | null;
+  appMode: AppMode;
+  customTemplates: PipelineTemplate[];
+  saveTemplateDialogOpen: boolean;
 
   setModules: (modules: ModuleManifest[]) => void;
   setProjectDir: (dir: string) => void;
@@ -98,6 +186,17 @@ interface WorkspaceState {
   setCredentialStatus: (status: { anthropic: boolean; openai: boolean; ollama: boolean }) => void;
   setSettingsOpen: (open: boolean) => void;
   setShowNextSteps: (show: boolean) => void;
+  setBundleOnlyMode: (enabled: boolean) => void;
+  setActiveView: (view: WorkspaceView) => void;
+  addReviewerNote: (artifactId: string, note: string) => void;
+  clearReviewerNotes: () => void;
+  setDefaultLlm: (value: DefaultLlm | null) => void;
+  applyDefaultLlmToAllNodes: () => number;
+  setViewerArtifactId: (id: string | null) => void;
+  setAppMode: (mode: AppMode) => void;
+  saveCustomTemplate: (template: PipelineTemplate) => void;
+  deleteCustomTemplate: (id: string) => void;
+  setSaveTemplateDialogOpen: (open: boolean) => void;
 
   addPipelineNode: (node: PipelineNode) => void;
   removePipelineNode: (id: string) => void;
@@ -129,6 +228,14 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
   credentialStatus: { anthropic: false, openai: false, ollama: false },
   settingsOpen: false,
   showNextSteps: false,
+  bundleOnlyMode: false,
+  activeView: "setup",
+  reviewerNotes: [],
+  defaultLlm: readDefaultLlmFromStorage(),
+  viewerArtifactId: null,
+  appMode: readAppModeFromStorage(),
+  customTemplates: readCustomTemplatesFromStorage(),
+  saveTemplateDialogOpen: false,
 
   setModules: (modules) => set({ modules }),
   setProjectDir: (projectDir) => set({ projectDir }),
@@ -151,6 +258,65 @@ export const useWorkspace = create<WorkspaceState>((set) => ({
   setCredentialStatus: (credentialStatus) => set({ credentialStatus }),
   setSettingsOpen: (settingsOpen) => set({ settingsOpen }),
   setShowNextSteps: (showNextSteps) => set({ showNextSteps }),
+  setBundleOnlyMode: (bundleOnlyMode) => set({ bundleOnlyMode, activeView: bundleOnlyMode ? "reviewer" : "setup" }),
+  setActiveView: (activeView) => set({ activeView }),
+  addReviewerNote: (artifactId, note) => set((state) => ({
+    reviewerNotes: [
+      ...state.reviewerNotes,
+      { artifactId, note, createdAt: new Date().toISOString() },
+    ],
+  })),
+  clearReviewerNotes: () => set({ reviewerNotes: [] }),
+  setDefaultLlm: (defaultLlm) => {
+    writeDefaultLlmToStorage(defaultLlm);
+    set((state) => {
+      if (!defaultLlm) return { defaultLlm };
+      const nextNodes = state.pipelineNodes.map((node) => {
+        const nextParams = applyDefaultLlmToParams(node.params, defaultLlm);
+        if (nextParams.provider !== node.params.provider || nextParams.model !== node.params.model) {
+          return { ...node, params: nextParams };
+        }
+        return node;
+      });
+      return { defaultLlm, pipelineNodes: nextNodes };
+    });
+  },
+  setViewerArtifactId: (viewerArtifactId) => set({ viewerArtifactId }),
+  setAppMode: (appMode) => {
+    writeAppModeToStorage(appMode);
+    set({ appMode });
+  },
+  saveCustomTemplate: (template) => {
+    set((state) => {
+      const next = [...state.customTemplates.filter((t) => t.id !== template.id), template];
+      writeCustomTemplatesToStorage(next);
+      return { customTemplates: next };
+    });
+  },
+  deleteCustomTemplate: (id) => {
+    set((state) => {
+      const next = state.customTemplates.filter((t) => t.id !== id);
+      writeCustomTemplatesToStorage(next);
+      return { customTemplates: next };
+    });
+  },
+  setSaveTemplateDialogOpen: (saveTemplateDialogOpen) => set({ saveTemplateDialogOpen }),
+  applyDefaultLlmToAllNodes: () => {
+    let updated = 0;
+    set((state) => {
+      if (!state.defaultLlm) return state;
+      const nextNodes = state.pipelineNodes.map((node) => {
+        const nextParams = applyDefaultLlmToParams(node.params, state.defaultLlm);
+        if (nextParams.provider !== node.params.provider || nextParams.model !== node.params.model) {
+          updated += 1;
+          return { ...node, params: nextParams };
+        }
+        return node;
+      });
+      return { pipelineNodes: nextNodes };
+    });
+    return updated;
+  },
   applyRunProgress: (event) => set((state) => {
     const next: RunProgressState = { ...state.runProgress, byNode: { ...state.runProgress.byNode } };
     let nextBudget = state.budget;

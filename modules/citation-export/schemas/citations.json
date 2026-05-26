@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "required": ["bibtex", "ris", "csl_json", "count"],
+  "properties": {
+    "bibtex": {"type": "string"},
+    "ris": {"type": "string"},
+    "csl_json": {"type": "array", "items": {"type": "object"}},
+    "count": {"type": "integer"}
+  },
+  "additionalProperties": false
+}

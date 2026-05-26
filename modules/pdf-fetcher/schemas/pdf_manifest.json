@@ -1,0 +1,24 @@
+{
+  "type": "object",
+  "required": ["pdfs"],
+  "properties": {
+    "pdfs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "doi", "path", "source_url", "bytes", "downloaded"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "doi": {"type": "string"},
+          "path": {"type": "string"},
+          "source_url": {"type": ["string", "null"]},
+          "bytes": {"type": "integer"},
+          "downloaded": {"type": "boolean"},
+          "reason": {"type": ["string", "null"]}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

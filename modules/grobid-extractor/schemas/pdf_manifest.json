@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "required": ["pdfs"],
+  "properties": {
+    "pdfs": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": true
+}

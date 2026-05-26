@@ -66,7 +66,7 @@ npm run package:win       # NSIS installer (x64)
 
 Output lands in `apps/desktop/release/`.
 
-Signing credentials should be supplied via environment variables (`CSC_LINK`, `CSC_KEY_PASSWORD` for macOS; `WIN_CSC_LINK`, `WIN_CSC_KEY_PASSWORD` for Windows). Unsigned builds run but show platform warnings on first launch.
+Production release builds require signing credentials. The GitHub release workflow runs `npm run release:preflight -- <mac|win|linux>` before packaging and fails macOS/Windows releases if signing secrets are missing. Use local `npm run package:*` commands only for unsigned development builds.
 
 ## Troubleshooting
 

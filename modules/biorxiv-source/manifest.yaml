@@ -1,0 +1,38 @@
+id: biorxiv-source
+version: 0.1.0
+name: bioRxiv / medRxiv Source
+description: Pulls bioRxiv or medRxiv preprint metadata with DOI and PDF links.
+stage: source
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs: []
+outputs:
+  - name: records
+    schema: schemas/records.json
+    description: Bibliographic records.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: volatile
+  guarantee: Fixture and snapshot modes are deterministic; live modes archive raw requests and responses when applicable.
+  variance_sources: [external_api_state]
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: true
+  network_domains: [api.biorxiv.org]
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://api.biorxiv.org/
+

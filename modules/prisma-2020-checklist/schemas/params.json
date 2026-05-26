@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "snapshot_path": {"type": "string"},
+    "reporting_standard": {"type": "string", "default": "PRISMA 2020"}
+  },
+  "additionalProperties": false
+}

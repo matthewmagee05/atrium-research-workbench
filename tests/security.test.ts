@@ -13,9 +13,16 @@ describe("environment filtering", () => {
   });
 
   it("passes RWB_ prefixed vars through", () => {
-    const filtered = filterEnvForModule({ RWB_RUN_ID: "abc", RWB_MODE: "execute" });
+    const filtered = filterEnvForModule({
+      RWB_RUN_ID: "abc",
+      RWB_MODE: "execute",
+      RWB_ZOTERO_API_KEY: "zotero-key",
+      RWB_SEMANTIC_SCHOLAR_API_KEY: "s2-key",
+    });
     expect(filtered.RWB_RUN_ID).toBe("abc");
     expect(filtered.RWB_MODE).toBe("execute");
+    expect(filtered.RWB_ZOTERO_API_KEY).toBe("zotero-key");
+    expect(filtered.RWB_SEMANTIC_SCHOLAR_API_KEY).toBe("s2-key");
   });
 
   it("blocks ANTHROPIC_API_KEY", () => {

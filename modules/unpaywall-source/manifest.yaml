@@ -1,0 +1,40 @@
+id: unpaywall-source
+version: 0.1.0
+name: Unpaywall Source
+description: Looks up open-access full-text locations for records with DOIs.
+stage: source
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: records
+    schema: schemas/records.json
+    optional: true
+outputs:
+  - name: full_text_links
+    schema: schemas/full_text_links.json
+    description: DOI-level open-access PDF and landing-page links.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: volatile
+  guarantee: Fixture and snapshot modes are deterministic; live_archived reflects Unpaywall API state and archives responses.
+  variance_sources: [external_api_state]
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: true
+  network_domains: [api.unpaywall.org]
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://unpaywall.org/products/api

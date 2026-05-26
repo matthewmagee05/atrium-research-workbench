@@ -62,7 +62,12 @@ async function main(): Promise<void> {
           messages: body.messages as never,
           schema: body.schema as Record<string, unknown> | undefined,
           max_output_tokens: body.max_output_tokens as number | undefined,
-          budget: config.budget
+          budget: {
+            ...config.budget,
+            spent_usd: usage.costUsd,
+            calls: usage.llmCalls,
+            tokens: usage.tokens
+          }
         });
         usage.llmCalls += 1;
         usage.costUsd += result.cost_usd_estimate;
@@ -108,7 +113,10 @@ async function main(): Promise<void> {
       }
       writeJson(response, 404, { error: "unknown_operation" });
     } catch (error) {
-      writeJson(response, 500, { error: error instanceof Error ? error.message : String(error) });
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(`[rwb-proxy] ${request.url} failed: ${message}`);
+      audit.append("proxy.error", { run_id: config.runId, node_id: config.nodeId, url: request.url, message });
+      writeJson(response, 500, { error: message });
     }
   });
   server.listen(0, "127.0.0.1", () => {

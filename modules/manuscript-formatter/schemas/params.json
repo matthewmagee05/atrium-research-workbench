@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "target_style": {
+      "type": "string",
+      "enum": ["generic-journal", "prisma-systematic-review", "apa-7", "nature-portfolio"],
+      "default": "generic-journal"
+    },
+    "title": {"type": "string", "default": "Untitled Atrium Study"},
+    "authors": {"type": "array", "items": {"type": "object"}, "default": []},
+    "corresponding_author": {"type": "string", "default": ""},
+    "keywords": {"type": "array", "items": {"type": "string"}, "default": []}
+  },
+  "additionalProperties": false
+}

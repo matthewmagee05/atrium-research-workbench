@@ -1,0 +1,40 @@
+id: cover-letter-drafter
+version: 0.1.0
+name: Cover Letter Drafter
+description: Drafts a journal cover letter from manuscript findings for human review.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: manuscript
+    schema: schemas/anything.json
+outputs:
+  - name: cover_letter
+    schema: schemas/cover_letter.json
+    description: Cover letter markdown.
+    output_kind: report_text
+params_schema: schemas/params.json
+llm:
+  required: true
+  budget: {max_tokens_per_run: 12000, max_calls_per_run: 3, max_cost_usd_per_run: 2}
+  prompts: []
+determinism:
+  level: replayable
+  guarantee: Fixture and snapshot modes are deterministic; live modes archive raw requests and responses when applicable.
+  variance_sources: []
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: true
+  triggers: [explicit_review_flag]
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: 
+

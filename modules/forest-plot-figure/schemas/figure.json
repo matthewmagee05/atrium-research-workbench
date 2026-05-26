@@ -1,0 +1,1 @@
+{"type": "object", "required": ["kind", "title", "svg", "data"], "properties": {"kind": {"type": "string"}, "title": {"type": "string"}, "svg": {"type": "string"}, "data": {"type": "object"}}, "additionalProperties": false}

@@ -31,6 +31,12 @@ test.describe("Atrium desktop renderer", () => {
     await expect(page.getByText("3. Verify")).toBeVisible();
   });
 
+  test("welcome screen exposes reviewer bundle drop-zone", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.locator(".bundleDropZone")).toBeVisible();
+    await expect(page.getByText(/Drop a reproducibility bundle here to open reviewer mode/)).toBeVisible();
+  });
+
   test("intro advances to template picker with all templates", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: /Pick a starting template/ }).click();
@@ -92,6 +98,37 @@ test.describe("Atrium desktop renderer", () => {
     await skipToWorkbench(page);
     await expect(page.getByText(/Next steps/)).toBeVisible();
     await expect(page.getByText(/Pick a template or drag modules/)).toBeVisible();
+  });
+
+  test("inspector exposes review queue identity controls", async ({ page }) => {
+    await page.goto("/");
+    await skipToWorkbench(page);
+    await expect(page.getByText("Review queue")).toBeVisible();
+    await page.getByPlaceholder("name or email").fill("reviewer@example.com");
+    await page.getByPlaceholder("0000-0000-0000-0000").fill("0000-0002-1825-0097");
+    await expect(page.getByPlaceholder("name or email")).toHaveValue("reviewer@example.com");
+  });
+
+  test("question-development exposes editable provider and model controls", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Pick a starting template/ }).click();
+    await page.getByRole("button", { name: /Use this template/ }).click();
+
+    await expect(page.getByText(/LLM provider and model/)).toBeVisible();
+    await page.getByRole("combobox", { name: /^Provider/ }).selectOption("ollama");
+    await expect(page.getByRole("combobox", { name: /^Model/ })).toHaveValue("llama3.1:8b");
+
+    await page.getByRole("combobox", { name: /^Model/ }).selectOption("__custom__");
+    await page.getByLabel("Custom model id").fill("local-research-model:latest");
+    await expect(page.getByLabel("Custom model id")).toHaveValue("local-research-model:latest");
+  });
+
+  test("run button gives next action when no project is open", async ({ page }) => {
+    await page.goto("/");
+    await page.getByRole("button", { name: /Pick a starting template/ }).click();
+    await page.getByRole("button", { name: /Use this template/ }).click();
+    await page.getByTitle("Choose a project before running").click();
+    await expect(page.locator(".topbarStatus")).toHaveText("Choose a project first.");
   });
 
   test("mode selector toggles run mode buttons", async ({ page }) => {

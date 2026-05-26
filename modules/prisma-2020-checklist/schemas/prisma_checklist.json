@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["standard", "items"],
+  "properties": {
+    "standard": {"type": "string"},
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "description", "status", "evidence"],
+        "properties": {
+          "item": {"type": "string"},
+          "description": {"type": "string"},
+          "status": {"type": "string"},
+          "evidence": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

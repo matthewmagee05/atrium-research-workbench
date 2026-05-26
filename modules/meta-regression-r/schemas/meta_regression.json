@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "required": [
+    "coefficients",
+    "k",
+    "method"
+  ],
+  "properties": {
+    "coefficients": {
+      "type": "object"
+    },
+    "k": {
+      "type": "integer"
+    },
+    "method": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

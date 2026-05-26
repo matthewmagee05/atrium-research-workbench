@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["documents"],
+  "properties": {
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "doi", "tei_xml", "sections", "grobid_status"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "doi": {"type": "string"},
+          "tei_xml": {"type": "string"},
+          "sections": {"type": "array", "items": {"type": "object"}},
+          "grobid_status": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,8 @@
+{
+  "type": "object",
+  "required": ["assessments"],
+  "properties": {
+    "assessments": {"type": "array", "items": {"type": "object"}}
+  },
+  "additionalProperties": true
+}

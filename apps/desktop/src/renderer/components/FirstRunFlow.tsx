@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Rocket, ArrowRight, Sparkles, CheckCircle2, Zap } from "lucide-react";
+import { useMemo, useState, type DragEvent } from "react";
+import { Rocket, ArrowRight, Sparkles, CheckCircle2, Zap, Trash2 } from "lucide-react";
 import { useWorkspace } from "../store/workspace";
-import { TEMPLATES, instantiateTemplate } from "../store/templates";
+import { applyDefaultLlmToParams } from "../store/module-catalog";
+import { TEMPLATES, instantiateTemplate, type PipelineTemplate } from "../store/templates";
 
 type Step = "intro" | "template";
 
@@ -10,15 +11,26 @@ export function FirstRunFlow() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("full-research-project");
   const addPipelineNode = useWorkspace((s) => s.addPipelineNode);
   const addPipelineEdge = useWorkspace((s) => s.addPipelineEdge);
+  const defaultLlm = useWorkspace((s) => s.defaultLlm);
   const setFirstRunComplete = useWorkspace((s) => s.setFirstRunComplete);
   const setShowNextSteps = useWorkspace((s) => s.setShowNextSteps);
   const setStatus = useWorkspace((s) => s.setStatus);
+  const setProjectDir = useWorkspace((s) => s.setProjectDir);
+  const setProtocolPath = useWorkspace((s) => s.setProtocolPath);
+  const setBundleOnlyMode = useWorkspace((s) => s.setBundleOnlyMode);
+  const setBundleImportPath = useWorkspace((s) => s.setBundleImportPath);
+  const customTemplates = useWorkspace((s) => s.customTemplates);
+  const deleteCustomTemplate = useWorkspace((s) => s.deleteCustomTemplate);
+
+  const allTemplates = useMemo<PipelineTemplate[]>(() => [...customTemplates, ...TEMPLATES], [customTemplates]);
 
   function applyTemplate(templateId: string) {
-    const template = TEMPLATES.find((t) => t.id === templateId);
+    const template = allTemplates.find((t) => t.id === templateId);
     if (!template) return;
     const { nodes, edges } = instantiateTemplate(template);
-    for (const node of nodes) addPipelineNode(node);
+    for (const node of nodes) {
+      addPipelineNode({ ...node, params: applyDefaultLlmToParams(node.params, defaultLlm) });
+    }
     for (const edge of edges) addPipelineEdge(edge);
     setStatus(`Loaded template: ${template.name}`);
   }
@@ -32,6 +44,28 @@ export function FirstRunFlow() {
   function finishBlank() {
     setShowNextSteps(true);
     setFirstRunComplete(true);
+  }
+
+  async function importDroppedBundle(event: DragEvent) {
+    event.preventDefault();
+    const file = event.dataTransfer.files?.[0] as File & { path?: string };
+    const bundlePath = file?.path;
+    if (!bundlePath || !window.rwb?.importBundleFromPath) {
+      setStatus("Drop-zone import is available in the desktop app.");
+      return;
+    }
+    const dest = await window.rwb.importBundleFromPath(bundlePath);
+    if (!dest) {
+      setStatus("Bundle import canceled.");
+      return;
+    }
+    setProjectDir(dest);
+    setProtocolPath(`${dest}/protocol.yaml`);
+    setBundleImportPath(bundlePath);
+    setBundleOnlyMode(true);
+    setShowNextSteps(true);
+    setFirstRunComplete(true);
+    setStatus(`Bundle-only reviewer mode opened: ${dest}`);
   }
 
   if (step === "intro") {
@@ -69,12 +103,19 @@ export function FirstRunFlow() {
             </button>
             <button className="ghost" onClick={finishBlank}>Start with a blank canvas</button>
           </div>
+          <div
+            className="bundleDropZone"
+            onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; }}
+            onDrop={importDroppedBundle}
+          >
+            Drop a reproducibility bundle here to open reviewer mode
+          </div>
         </div>
       </div>
     );
   }
 
-  const selected = TEMPLATES.find((t) => t.id === selectedTemplateId);
+  const selected = allTemplates.find((t) => t.id === selectedTemplateId);
 
   return (
     <div className="wizardOverlay">
@@ -84,6 +125,35 @@ export function FirstRunFlow() {
 
         <div className="templateLayout">
           <div className="templateList">
+            {customTemplates.length > 0 && (
+              <div className="templateGroupLabel">Your saved templates</div>
+            )}
+            {customTemplates.map((t) => (
+              <div key={t.id} className={`templateChoiceRow ${selectedTemplateId === t.id ? "active" : ""}`}>
+                <button
+                  className={`templateChoice custom ${selectedTemplateId === t.id ? "active" : ""}`}
+                  onClick={() => setSelectedTemplateId(t.id)}
+                >
+                  <strong>{t.name}</strong>
+                  <span>{t.description}</span>
+                </button>
+                <button
+                  className="templateDeleteBtn"
+                  title="Delete this saved template"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (!confirm(`Delete saved template "${t.name}"?`)) return;
+                    deleteCustomTemplate(t.id);
+                    if (selectedTemplateId === t.id) setSelectedTemplateId("full-research-project");
+                  }}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+            {customTemplates.length > 0 && (
+              <div className="templateGroupLabel">Built-in templates</div>
+            )}
             {TEMPLATES.map((t) => (
               <button
                 key={t.id}

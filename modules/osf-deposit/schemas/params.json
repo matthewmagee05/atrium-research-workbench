@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {
+      "type": "string",
+      "enum": [
+        "fixture",
+        "snapshot",
+        "live_archived"
+      ],
+      "default": "fixture"
+    },
+    "snapshot_path": {
+      "type": "string"
+    },
+    "dry_run": {
+      "type": "boolean",
+      "default": true
+    },
+    "submit_live": {
+      "type": "boolean",
+      "default": false
+    },
+    "api_base": {
+      "type": "string",
+      "default": "https://api.osf.io/v2"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

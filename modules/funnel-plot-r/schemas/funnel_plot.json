@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": [
+    "kind",
+    "points"
+  ],
+  "properties": {
+    "kind": {
+      "type": "string"
+    },
+    "points": {
+      "type": "array"
+    },
+    "egger_slope": {
+      "type": [
+        "number",
+        "null"
+      ]
+    }
+  },
+  "additionalProperties": false
+}

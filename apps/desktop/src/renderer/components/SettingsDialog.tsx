@@ -1,6 +1,14 @@
-import { useEffect, useState } from "react";
-import { X, KeyRound, CheckCircle, XCircle, Loader, Plug, Eye, EyeOff, Trash2, Wand2, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, KeyRound, CheckCircle, XCircle, Loader, Plug, Eye, EyeOff, Trash2, Wand2, AlertTriangle, Sparkles } from "lucide-react";
 import { useWorkspace } from "../store/workspace";
+import {
+  defaultModelForProvider,
+  paramsUseLlm,
+  PROVIDER_LABELS,
+  PROVIDER_MODELS,
+  type DefaultLlm,
+  type LlmProvider,
+} from "../store/module-catalog";
 
 const SMART_TO_ASCII: Record<string, string> = {
   "‐": "-", "‑": "-", "‒": "-", "–": "-", "—": "-", "―": "-",
@@ -37,6 +45,43 @@ export function SettingsDialog() {
   const setOpen = useWorkspace((s) => s.setSettingsOpen);
   const credentialStatus = useWorkspace((s) => s.credentialStatus);
   const setCredentialStatus = useWorkspace((s) => s.setCredentialStatus);
+  const defaultLlm = useWorkspace((s) => s.defaultLlm);
+  const setDefaultLlm = useWorkspace((s) => s.setDefaultLlm);
+  const applyDefaultLlmToAllNodes = useWorkspace((s) => s.applyDefaultLlmToAllNodes);
+  const pipelineNodes = useWorkspace((s) => s.pipelineNodes);
+  const [defaultApplyDetail, setDefaultApplyDetail] = useState<string | null>(null);
+
+  const llmNodeCount = useMemo(
+    () => pipelineNodes.filter((n) => paramsUseLlm(n.params)).length,
+    [pipelineNodes],
+  );
+
+  const defaultProvider: LlmProvider = defaultLlm?.provider ?? "openai";
+  const defaultModel = defaultLlm?.model ?? defaultModelForProvider(defaultProvider);
+  const defaultProviderModels = PROVIDER_MODELS[defaultProvider];
+  const defaultModelOption = defaultProviderModels.includes(defaultModel) ? defaultModel : "__custom__";
+
+  function updateDefault(next: Partial<DefaultLlm>) {
+    const nextProvider: LlmProvider = next.provider ?? defaultProvider;
+    const nextModel = next.model ?? (next.provider ? defaultModelForProvider(nextProvider) : defaultModel);
+    setDefaultLlm({ provider: nextProvider, model: nextModel });
+    setDefaultApplyDetail(null);
+  }
+
+  function clearDefault() {
+    setDefaultLlm(null);
+    setDefaultApplyDetail(null);
+  }
+
+  function applyDefaultToCanvas() {
+    if (!defaultLlm) return;
+    const updated = applyDefaultLlmToAllNodes();
+    setDefaultApplyDetail(
+      updated === 0
+        ? "All LLM nodes already use the default."
+        : `Updated ${updated} node${updated === 1 ? "" : "s"} to ${PROVIDER_LABELS[defaultLlm.provider]} / ${defaultLlm.model}.`,
+    );
+  }
 
   const [values, setValues] = useState<Record<string, string>>({ anthropic: "", openai: "", ollama: "" });
   const [reveal, setReveal] = useState<Record<string, boolean>>({});
@@ -113,6 +158,84 @@ export function SettingsDialog() {
         <p className="settingsHint">
           Credentials are stored in your OS keychain (Keychain on macOS, Credential Manager on Windows, libsecret on Linux). They are never written to your project files.
         </p>
+
+        <section className="settingsRow defaultLlmRow" aria-label="Default LLM">
+          <div className="settingsRowHead">
+            <strong><Sparkles size={14} /> Default LLM</strong>
+            {defaultLlm ? (
+              <span className="settingsStatus stored">
+                <CheckCircle size={12} /> {PROVIDER_LABELS[defaultLlm.provider]} / {defaultLlm.model}
+              </span>
+            ) : (
+              <span className="settingsStatus missing">Not set</span>
+            )}
+          </div>
+          <p className="settingsHint" style={{ margin: "4px 0 8px" }}>
+            Applied to every LLM-using module so you only configure one provider and model. New nodes inherit this automatically; use "Apply to all" to retrofit existing nodes on the canvas.
+          </p>
+          <div className="providerModelGrid">
+            <label>
+              Provider
+              <select
+                value={defaultProvider}
+                onChange={(e) => updateDefault({ provider: e.target.value as LlmProvider })}
+              >
+                {(Object.keys(PROVIDER_MODELS) as LlmProvider[]).map((provider) => (
+                  <option key={provider} value={provider}>{PROVIDER_LABELS[provider]}</option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Model
+              <select
+                value={defaultModelOption}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  updateDefault({ model: value === "__custom__" ? defaultModel : value });
+                }}
+              >
+                {defaultProviderModels.map((model) => (
+                  <option key={model} value={model}>{model}</option>
+                ))}
+                <option value="__custom__">Custom model...</option>
+              </select>
+            </label>
+          </div>
+          {defaultModelOption === "__custom__" && (
+            <label className="customModelField">
+              Custom model id
+              <input
+                type="text"
+                value={defaultModel}
+                placeholder={defaultModelForProvider(defaultProvider)}
+                onChange={(e) => updateDefault({ model: e.target.value })}
+              />
+            </label>
+          )}
+          <div className="settingsRowBody" style={{ marginTop: 8 }}>
+            <button
+              className="iconBtn small primary"
+              onClick={applyDefaultToCanvas}
+              disabled={!defaultLlm || llmNodeCount === 0}
+              title={llmNodeCount === 0 ? "No LLM nodes on the canvas yet" : undefined}
+            >
+              <Sparkles size={12} /> Apply to all LLM nodes ({llmNodeCount})
+            </button>
+            {defaultLlm && (
+              <button
+                className="iconBtn small"
+                onClick={clearDefault}
+                title="Clear the default; new LLM nodes will fall back to their module-recommended provider/model"
+              >
+                <Trash2 size={12} /> Clear
+              </button>
+            )}
+          </div>
+          {defaultApplyDetail && (
+            <span className="settingsDetail pass">{defaultApplyDetail}</span>
+          )}
+        </section>
+
         {PROVIDERS.map((p) => {
           const isStored = credentialStatus[p.id];
           const currentValue = values[p.id] ?? "";

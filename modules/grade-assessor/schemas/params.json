@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "snapshot_path": {"type": "string"},
+    "outcome": {"type": "string", "default": "Primary outcome"}
+  },
+  "additionalProperties": false
+}

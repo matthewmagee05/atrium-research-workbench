@@ -1,0 +1,1 @@
+{"type": "object", "required": ["studies", "summary"], "properties": {"studies": {"type": "array"}, "summary": {"type": "object"}}, "additionalProperties": true}

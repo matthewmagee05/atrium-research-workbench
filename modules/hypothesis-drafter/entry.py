@@ -62,12 +62,12 @@ def main() -> None:
         parsed = json.loads(response.get("text", "{}"))
         raw_hypotheses = parsed.get("hypotheses", [])
     except Exception as exc:
-        progress_update(50, f"LLM call failed; emitting placeholders. Reason: {exc}")
+        progress_update(50, f"LLM call failed; emitting conservative fallback hypotheses. Reason: {exc}")
         raw_hypotheses = [
             {
-                "text": f"Hypothesis derived from: {q.get('text', '')}",
-                "variables": ["unknown"],
-                "assumptions": ["LLM unavailable; placeholder hypothesis"],
+                "text": f"The evidence base contains extractable variables relevant to: {q.get('text', '')}",
+                "variables": ["record_id", "study_design", "population_or_context", "outcome_or_finding"],
+                "assumptions": ["Offline fallback generated because the LLM provider was unavailable; researcher review is required before preregistration."],
             }
             for q in questions[:max_hypotheses]
         ]

@@ -11,10 +11,10 @@
       "corpus_lock": "sha256:c52a3efd2cffade0a44a52949ea3cd144f9f50f6c7c694c94277102466f633cf"
     },
     "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee": {
-      "summary": "sha256:953a973b4c2545076fb30eb9a18710f14782be19fc38795b249033d2368007c3",
-      "tables": "sha256:93bbeed36afb2a5653176d35ef2c426fd4303019cbf3e3bf7bea01e9143ec653",
-      "figure_specs": "sha256:cbb7044203bfd7d26dc631644ecd0c0fc439159931e716fd3ea0bfbee5c2c600",
-      "rendered_figures": "sha256:cbb7044203bfd7d26dc631644ecd0c0fc439159931e716fd3ea0bfbee5c2c600"
+      "summary": "sha256:18b4127b6c2bf52234659dbfe0a0cc2e8997590ddee23e543568d49d61f7d349",
+      "tables": "sha256:56f222d4516a68c7d3f84ee90cfe168495ef77b7d3c9c9def980e13bbac7ab9f",
+      "figure_specs": "sha256:d66b624e36669d04dd993843d6e8251482a84a0d7b8756225e39bdc460845f03",
+      "rendered_figures": "sha256:d66b624e36669d04dd993843d6e8251482a84a0d7b8756225e39bdc460845f03"
     }
   }
 }

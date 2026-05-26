@@ -1,0 +1,40 @@
+id: figshare-deposit
+version: 0.1.0
+name: Figshare Deposit
+description: Creates a dry-run or live archived figshare deposit request for the final bundle.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: bundle_manifest
+    schema: schemas/anything.json
+    optional: true
+outputs:
+  - name: figshare_deposit
+    schema: schemas/deposit.json
+    description: Deposit result or dry-run request.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: volatile
+  guarantee: Fixture and snapshot modes are deterministic; live modes archive raw requests and responses when applicable.
+  variance_sources: [external_api_state]
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: true
+  network_domains: [api.figshare.com]
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://docs.figshare.com/

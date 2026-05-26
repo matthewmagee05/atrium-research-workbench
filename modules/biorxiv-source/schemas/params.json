@@ -1,0 +1,42 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {
+      "type": "string",
+      "enum": [
+        "fixture",
+        "snapshot",
+        "live_archived"
+      ],
+      "default": "fixture"
+    },
+    "fixture_id": {
+      "type": "string",
+      "default": "tiny-corpus"
+    },
+    "snapshot_path": {
+      "type": "string"
+    },
+    "server": {
+      "type": "string",
+      "enum": [
+        "biorxiv",
+        "medrxiv"
+      ],
+      "default": "biorxiv"
+    },
+    "from_date": {
+      "type": "string",
+      "default": "2024-01-01"
+    },
+    "to_date": {
+      "type": "string",
+      "default": "2024-12-31"
+    },
+    "max_records": {
+      "type": "integer",
+      "default": 25
+    }
+  },
+  "additionalProperties": false
+}

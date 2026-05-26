@@ -1,0 +1,1 @@
+{"type": "object", "properties": {"title": {"type": "string", "default": "PRISMA 2020 Flow Diagram"}}, "additionalProperties": false}

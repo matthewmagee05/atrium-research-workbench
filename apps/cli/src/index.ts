@@ -6,10 +6,12 @@ import {
   ArtifactStore,
   diffArtifacts,
   exportBundle,
+  exportReviewQueue,
   freezeProtocol,
   generateEnvironmentLock,
   generateMethods,
   importBundle,
+  importReviewQueue,
   initProject,
   inspectBundleTrust,
   listModules,
@@ -127,6 +129,25 @@ review.command("resolve")
     const item = resolveReviewItem(path.resolve(options.projectDir), reviewId, decision);
     jsonLog("review.resolved", { review_id: reviewId });
     process.stdout.write(`${JSON.stringify(item, null, 2)}\n`);
+  });
+
+const collaboration = program.command("collaboration");
+collaboration.command("export-review-queue")
+  .option("--project-dir <project-dir>", "project directory", ".")
+  .requiredOption("--output <path>", "review queue snapshot path")
+  .action((options: { projectDir: string; output: string }) => {
+    const snapshot = exportReviewQueue(path.resolve(options.projectDir), path.resolve(options.output));
+    jsonLog("collaboration.review_queue_exported", { output: path.resolve(options.output), count: snapshot.items.length });
+    process.stdout.write(`Exported ${snapshot.items.length} review items to ${path.resolve(options.output)}\n`);
+  });
+
+collaboration.command("import-review-queue")
+  .argument("<snapshot-path>")
+  .option("--project-dir <project-dir>", "project directory", ".")
+  .action((snapshotPath: string, options: { projectDir: string }) => {
+    const result = importReviewQueue(path.resolve(options.projectDir), path.resolve(snapshotPath));
+    jsonLog("collaboration.review_queue_imported", { snapshot: path.resolve(snapshotPath), ...result });
+    process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
   });
 
 const methods = program.command("methods");

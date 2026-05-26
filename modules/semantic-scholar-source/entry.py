@@ -41,7 +41,7 @@ def main() -> None:
         }
         url = "https://api.semanticscholar.org/graph/v1/paper/search?" + urllib.parse.urlencode(query_params)
         headers: dict[str, str] = {}
-        api_key = os.environ.get("SEMANTIC_SCHOLAR_API_KEY")
+        api_key = os.environ.get("RWB_SEMANTIC_SCHOLAR_API_KEY")
         if api_key:
             headers["x-api-key"] = api_key
         req = urllib.request.Request(url, headers=headers)

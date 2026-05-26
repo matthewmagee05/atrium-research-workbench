@@ -1,12 +1,14 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Search, Plus } from "lucide-react";
 import { useWorkspace, type ModuleManifest } from "../store/workspace";
-import { moduleExtras, STAGE_META, FALLBACK_STAGE } from "../store/module-catalog";
+import { applyDefaultLlmToParams, moduleExtras, STAGE_META, FALLBACK_STAGE } from "../store/module-catalog";
 
 export function ModuleLibrary() {
   const modules = useWorkspace((s) => s.modules);
   const addPipelineNode = useWorkspace((s) => s.addPipelineNode);
   const pipelineNodes = useWorkspace((s) => s.pipelineNodes);
+  const bundleOnlyMode = useWorkspace((s) => s.bundleOnlyMode);
+  const defaultLlm = useWorkspace((s) => s.defaultLlm);
   const [query, setQuery] = useState("");
   const [openStages, setOpenStages] = useState<Record<string, boolean>>(() => {
     const init: Record<string, boolean> = {};
@@ -37,20 +39,25 @@ export function ModuleLibrary() {
   }, [modules, query]);
 
   const onDragStart = useCallback((event: React.DragEvent, moduleId: string) => {
+    if (bundleOnlyMode) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer.setData("application/rwb-module", moduleId);
     event.dataTransfer.effectAllowed = "copy";
-  }, []);
+  }, [bundleOnlyMode]);
 
   const addToCanvas = useCallback((moduleId: string) => {
+    if (bundleOnlyMode) return;
     const existing = pipelineNodes.filter((n) => n.moduleId === moduleId);
     const extras = moduleExtras(moduleId);
     addPipelineNode({
       id: `${moduleId}-${Date.now().toString(36)}`,
       moduleId,
-      params: { ...(extras.recommendedParams ?? {}) },
+      params: applyDefaultLlmToParams(extras.recommendedParams, defaultLlm),
       position: { x: 80 + pipelineNodes.length * 240, y: 200 + existing.length * 60 },
     });
-  }, [addPipelineNode, pipelineNodes]);
+  }, [addPipelineNode, pipelineNodes, bundleOnlyMode, defaultLlm]);
 
   const toggleStage = useCallback((stageId: string) => {
     setOpenStages((prev) => ({ ...prev, [stageId]: !prev[stageId] }));
@@ -90,8 +97,8 @@ export function ModuleLibrary() {
                     return (
                       <div
                         key={mod.id}
-                        className="module"
-                        draggable
+                        className={`module ${bundleOnlyMode ? "disabled" : ""}`}
+                        draggable={!bundleOnlyMode}
                         onDragStart={(e) => onDragStart(e, mod.id)}
                         onDoubleClick={() => addToCanvas(mod.id)}
                         title={extras.whenToUse}
@@ -100,6 +107,7 @@ export function ModuleLibrary() {
                           <strong>{mod.name}</strong>
                           <button
                             className="moduleAdd"
+                            disabled={bundleOnlyMode}
                             onClick={(e) => { e.stopPropagation(); addToCanvas(mod.id); }}
                             title="Add to canvas"
                           >

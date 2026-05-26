@@ -1,0 +1,7 @@
+Package: meta-regression-r-module
+Type: Package
+Title: Meta-regression R
+Version: 0.1.0
+Imports:
+    jsonlite
+

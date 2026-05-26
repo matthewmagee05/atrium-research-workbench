@@ -1,0 +1,23 @@
+{
+  "type": "object",
+  "required": ["assessments"],
+  "properties": {
+    "assessments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "tool", "overall", "domains", "requires_review"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "tool": {"type": "string"},
+          "overall": {"type": "string"},
+          "domains": {"type": "array", "items": {"type": "object"}},
+          "rationale": {"type": "string"},
+          "requires_review": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

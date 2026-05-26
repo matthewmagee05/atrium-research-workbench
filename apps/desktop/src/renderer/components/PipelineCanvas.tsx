@@ -12,7 +12,7 @@ import ReactFlow, {
 } from "reactflow";
 import { useWorkspace } from "../store/workspace";
 import { validateEdge } from "../store/edge-validation";
-import { moduleExtras } from "../store/module-catalog";
+import { applyDefaultLlmToParams, moduleExtras } from "../store/module-catalog";
 import { ModuleNode } from "./ModuleNode";
 import { Workflow } from "lucide-react";
 import "reactflow/dist/style.css";
@@ -29,6 +29,8 @@ export function PipelineCanvas() {
   const updateNodePosition = useWorkspace((s) => s.updateNodePosition);
   const setSelectedNodeId = useWorkspace((s) => s.setSelectedNodeId);
   const setStatus = useWorkspace((s) => s.setStatus);
+  const bundleOnlyMode = useWorkspace((s) => s.bundleOnlyMode);
+  const defaultLlm = useWorkspace((s) => s.defaultLlm);
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null);
   const lastNodeCount = useRef(0);
 
@@ -139,6 +141,7 @@ export function PipelineCanvas() {
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
+      if (bundleOnlyMode) return;
       const moduleId = event.dataTransfer.getData("application/rwb-module");
       if (!moduleId || !reactFlowInstance.current) return;
       const position = reactFlowInstance.current.screenToFlowPosition({
@@ -149,11 +152,11 @@ export function PipelineCanvas() {
       addPipelineNode({
         id: `${moduleId}-${Date.now().toString(36)}`,
         moduleId,
-        params: { ...(extras.recommendedParams ?? {}) },
+        params: applyDefaultLlmToParams(extras.recommendedParams, defaultLlm),
         position,
       });
     },
-    [addPipelineNode],
+    [addPipelineNode, bundleOnlyMode, defaultLlm],
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -194,6 +197,9 @@ export function PipelineCanvas() {
         fitView={pipelineNodes.length > 0}
         fitViewOptions={{ padding: 0.15, minZoom: 0.2, maxZoom: 1.2 }}
         deleteKeyCode={["Backspace", "Delete"]}
+        nodesDraggable={!bundleOnlyMode}
+        nodesConnectable={!bundleOnlyMode}
+        elementsSelectable
         defaultEdgeOptions={{ animated: true, markerEnd: { type: MarkerType.ArrowClosed } }}
       >
         <Background gap={20} size={1} />

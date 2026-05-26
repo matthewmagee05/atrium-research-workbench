@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "required": ["label", "materials", "index_markdown", "packaging_status", "reviewer_note"],
+  "properties": {
+    "label": {"type": "string"},
+    "materials": {"type": "array", "items": {"type": "object"}},
+    "index_markdown": {"type": "string"},
+    "packaging_status": {"type": "string"},
+    "reviewer_note": {"type": "string"}
+  },
+  "additionalProperties": false
+}

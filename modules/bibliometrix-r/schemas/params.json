@@ -15,7 +15,12 @@
           "citation_summary",
           "coauthor_network",
           "keyword_frequency",
-          "annual_growth_rate"
+          "annual_growth_rate",
+          "citation_distribution",
+          "author_impact",
+          "source_impact",
+          "keyword_cooccurrence",
+          "bradford_zones"
         ]
       },
       "examples": [["annual_publications", "venue_publications", "author_publications"]]

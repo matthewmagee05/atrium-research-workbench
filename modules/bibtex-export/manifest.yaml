@@ -1,0 +1,44 @@
+id: bibtex-export
+version: 0.1.0
+name: Bibtex Export
+description: Exports Atrium records or decisions for bibtex.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: records
+    schema: schemas/records.json
+    optional: true
+  - name: decisions
+    schema: schemas/anything.json
+    optional: true
+outputs:
+  - name: bibtex
+    schema: schemas/output.json
+    description: Export payload.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Fixture and snapshot modes are deterministic; live modes archive raw requests and responses when applicable.
+  variance_sources: []
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: 
+

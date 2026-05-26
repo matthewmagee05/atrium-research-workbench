@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {
+      "type": "string",
+      "enum": [
+        "fixture",
+        "snapshot",
+        "live_archived"
+      ],
+      "default": "fixture"
+    },
+    "snapshot_path": {
+      "type": "string"
+    },
+    "dry_run": {
+      "type": "boolean",
+      "default": true
+    },
+    "submit_live": {
+      "type": "boolean",
+      "default": false
+    },
+    "api_base": {
+      "type": "string",
+      "default": "https://zenodo.org/api"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

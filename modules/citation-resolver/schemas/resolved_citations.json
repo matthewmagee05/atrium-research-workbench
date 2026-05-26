@@ -1,0 +1,1 @@
+{"type": "object", "required": ["citations"], "properties": {"citations": {"type": "array", "items": {"type": "object"}}}, "additionalProperties": false}

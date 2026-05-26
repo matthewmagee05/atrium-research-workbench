@@ -56,7 +56,7 @@ describe("sandbox wrapping", () => {
   it("best-effort returns a recognized mechanism", () => {
     process.env.RWB_SANDBOX = "best-effort";
     const result = wrapCommandForSandbox("python3", { moduleDir: "/m", scratchDir: "/s", allowNetwork: false });
-    expect(["none", "bwrap", "sandbox-exec", "windows-appcontainer", "windows-low-integrity"]).toContain(result.mechanism);
+    expect(["none", "bwrap", "sandbox-exec", "windows-low-integrity", "windows-powershell-restricted"]).toContain(result.mechanism);
     if (result.cleanup) result.cleanup();
   });
 });

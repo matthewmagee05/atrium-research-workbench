@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["rows"],
+  "properties": {
+    "rows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["record_id", "effect", "se"],
+        "properties": {
+          "record_id": {"type": "string"},
+          "label": {"type": "string"},
+          "effect": {"type": "number"},
+          "se": {"type": "number"},
+          "moderators": {"type": "object"}
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

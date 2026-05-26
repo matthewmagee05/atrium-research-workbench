@@ -1,0 +1,10 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "effect_field": {"type": "string", "default": "effect"},
+    "se_field": {"type": "string", "default": "se"},
+    "method": {"type": "string", "enum": ["dersimonian_laird"], "default": "dersimonian_laird"}
+  },
+  "additionalProperties": false
+}

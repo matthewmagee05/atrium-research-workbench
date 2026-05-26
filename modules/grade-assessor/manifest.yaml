@@ -1,0 +1,41 @@
+id: grade-assessor
+version: 0.1.0
+name: GRADE Assessor
+description: Builds certainty-of-evidence rows per outcome from meta-analysis and risk-of-bias outputs.
+stage: review
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: meta_summary
+    schema: schemas/meta_summary.json
+  - name: rob_assessments
+    schema: schemas/rob_assessments.json
+outputs:
+  - name: grade_table
+    schema: schemas/grade_table.json
+    description: GRADE certainty table per outcome.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: replayable
+  guarantee: GRADE suggestions require human adjudication; replay preserves recorded judgements.
+  variance_sources: [human_review]
+  reproduction_metrics: [schema_validity, decision_agreement_rate]
+human_in_the_loop:
+  enabled: true
+  triggers: [explicit_review_flag]
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://www.gradeworkinggroup.org/

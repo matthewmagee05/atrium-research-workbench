@@ -1,0 +1,45 @@
+id: manuscript-formatter
+version: 0.1.0
+name: Manuscript Formatter
+description: Formats a narrative draft, tables, and figures into a journal-style manuscript object.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: draft
+    schema: schemas/draft.json
+  - name: figures
+    schema: schemas/figures.json
+    optional: true
+  - name: tables
+    schema: schemas/tables.json
+    optional: true
+outputs:
+  - name: manuscript
+    schema: schemas/manuscript.json
+    description: Publication-ready manuscript package as structured markdown sections.
+    output_kind: report_text
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Formats supplied markdown and artifact references without external calls.
+  variance_sources: []
+  reproduction_metrics: [schema_validity]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: ""

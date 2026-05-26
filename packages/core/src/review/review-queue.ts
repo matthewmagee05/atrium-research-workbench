@@ -1,7 +1,7 @@
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import Database from "better-sqlite3";
-import { ensureDir } from "../fs-utils";
+import { ensureDir, readJsonFile, writeJsonFile } from "../fs-utils";
 
 export type ReviewStatus = "pending" | "resolved";
 
@@ -20,6 +20,7 @@ export interface ReviewDecision {
   reviewer_rationale?: string;
   decided_at: string;
   decided_by?: string;
+  reviewer_orcid?: string;
   [key: string]: unknown;
 }
 
@@ -34,6 +35,19 @@ export interface ReviewItem {
   decision: ReviewDecision | null;
   created_at: string;
   resolved_at: string | null;
+}
+
+export interface ReviewQueueSnapshot {
+  schema_version: "review-queue.v1";
+  exported_at: string;
+  items: ReviewItem[];
+}
+
+export interface ReviewQueueImportResult {
+  imported: number;
+  updated: number;
+  skipped: number;
+  output_path?: string;
 }
 
 function dbFor(projectDir: string): Database.Database {
@@ -69,6 +83,31 @@ function rowToItem(row: Record<string, unknown>): ReviewItem {
     created_at: row.created_at as string,
     resolved_at: row.resolved_at as string | null
   };
+}
+
+function normalizeOrcid(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const value = raw.trim();
+  return /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i.test(value) ? value.toUpperCase() : undefined;
+}
+
+function writeItem(db: Database.Database, item: ReviewItem): void {
+  db.prepare(`
+    insert or replace into review_items
+    (id, project_dir, run_id, node_id, status, payload_json, schema_json, decision_json, created_at, resolved_at)
+    values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    item.id,
+    item.project_dir,
+    item.run_id,
+    item.node_id,
+    item.status,
+    JSON.stringify(item.payload),
+    JSON.stringify(item.schema),
+    item.decision ? JSON.stringify(item.decision) : null,
+    item.created_at,
+    item.resolved_at
+  );
 }
 
 export function createReviewItem(projectDir: string, payload: unknown, schema: unknown, options: { runId?: string; nodeId?: string } = {}): ReviewItem {
@@ -122,7 +161,9 @@ export function listReviewItems(projectDir: string, status?: ReviewStatus): Revi
 
 function normalizeDecision(raw: unknown): ReviewDecision {
   if (raw && typeof raw === "object" && "decision_type" in (raw as Record<string, unknown>)) {
-    return raw as ReviewDecision;
+    const explicit = raw as ReviewDecision;
+    const reviewerOrcid = normalizeOrcid(explicit.reviewer_orcid ?? explicit.orcid);
+    return reviewerOrcid ? { ...explicit, reviewer_orcid: reviewerOrcid } : explicit;
   }
   const obj = (raw ?? {}) as Record<string, unknown>;
   const accepted = Boolean(obj.accepted ?? false);
@@ -137,7 +178,8 @@ function normalizeDecision(raw: unknown): ReviewDecision {
     reviewer_rationale: typeof obj.reviewer_rationale === "string" ? obj.reviewer_rationale : undefined,
     decided_at: typeof obj.decided_at === "string" ? obj.decided_at : new Date().toISOString(),
     decided_by: typeof obj.decided_by === "string" ? obj.decided_by : undefined,
-    ...obj
+    ...obj,
+    reviewer_orcid: normalizeOrcid(obj.reviewer_orcid ?? obj.orcid),
   };
 }
 
@@ -170,4 +212,57 @@ export function resolvedDecisionsForNode(projectDir: string, runId: string, node
   } finally {
     db.close();
   }
+}
+
+function reviewTimestamp(item: ReviewItem): number {
+  const raw = item.resolved_at ?? item.decision?.decided_at ?? item.created_at;
+  const ts = Date.parse(raw);
+  return Number.isFinite(ts) ? ts : 0;
+}
+
+export function exportReviewQueue(projectDir: string, outputPath = path.join(projectDir, ".rwb", "review_queue.json")): ReviewQueueSnapshot {
+  const snapshot: ReviewQueueSnapshot = {
+    schema_version: "review-queue.v1",
+    exported_at: new Date().toISOString(),
+    items: listReviewItems(projectDir).sort((a, b) => a.id.localeCompare(b.id))
+  };
+  writeJsonFile(outputPath, snapshot);
+  return snapshot;
+}
+
+export function importReviewQueue(projectDir: string, snapshotPath: string): ReviewQueueImportResult {
+  const snapshot = readJsonFile<ReviewQueueSnapshot>(snapshotPath);
+  if (snapshot.schema_version !== "review-queue.v1" || !Array.isArray(snapshot.items)) {
+    throw new Error(`Unsupported review queue snapshot: ${snapshotPath}`);
+  }
+
+  const db = dbFor(projectDir);
+  let imported = 0;
+  let updated = 0;
+  let skipped = 0;
+  try {
+    for (const incomingRaw of snapshot.items) {
+      const incoming: ReviewItem = {
+        ...incomingRaw,
+        project_dir: projectDir,
+        decision: incomingRaw.decision ? normalizeDecision(incomingRaw.decision) : null
+      };
+      const existingRow = db.prepare("select * from review_items where id = ?").get(incoming.id) as Record<string, unknown> | undefined;
+      if (!existingRow) {
+        writeItem(db, incoming);
+        imported += 1;
+        continue;
+      }
+      const existing = rowToItem(existingRow);
+      if (reviewTimestamp(incoming) > reviewTimestamp(existing)) {
+        writeItem(db, incoming);
+        updated += 1;
+      } else {
+        skipped += 1;
+      }
+    }
+  } finally {
+    db.close();
+  }
+  return { imported, updated, skipped };
 }

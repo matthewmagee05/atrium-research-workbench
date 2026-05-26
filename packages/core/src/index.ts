@@ -14,7 +14,7 @@ import { listModules } from "./modules/registry";
 import { freezeProtocol, validateProtocol } from "./protocol/service";
 import { initProject } from "./project";
 import { runProtocol } from "./runner/run";
-import { createReviewItem, listReviewItems, resolveReviewItem, resolvedDecisionsForNode } from "./review/review-queue";
+import { createReviewItem, exportReviewQueue, importReviewQueue, listReviewItems, resolveReviewItem, resolvedDecisionsForNode } from "./review/review-queue";
 import { computeVarianceMetrics } from "./variance/metrics";
 import type { CorePaths } from "./types";
 
@@ -33,6 +33,7 @@ export {
   createReviewItem,
   diffArtifacts,
   exportBundle,
+  exportReviewQueue,
   findNonAsciiChar,
   freezeProtocol,
   generateEnvironmentLock,
@@ -40,6 +41,7 @@ export {
   getCredential,
   getCredentialStatus,
   importBundle,
+  importReviewQueue,
   initProject,
   inspectBundleTrust,
   listModules,

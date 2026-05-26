@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "snapshot_path": {"type": "string"},
+    "max_bytes": {"type": "integer", "minimum": 1024, "default": 52428800}
+  },
+  "additionalProperties": false
+}

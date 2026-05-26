@@ -112,7 +112,7 @@ export interface SandboxedCommand {
   command: string;
   prefixArgs: string[];
   cleanup?: () => void;
-  mechanism: "none" | "bwrap" | "sandbox-exec" | "windows-appcontainer" | "windows-low-integrity";
+  mechanism: "none" | "bwrap" | "sandbox-exec" | "windows-low-integrity" | "windows-powershell-restricted";
 }
 
 export function wrapCommandForSandbox(command: string, request: SandboxRequest): SandboxedCommand {
@@ -220,7 +220,7 @@ function wrapForWindowsSandbox(command: string, request: SandboxRequest, policy:
         "-Command",
         script,
       ],
-      mechanism: "windows-appcontainer",
+      mechanism: "windows-powershell-restricted",
     };
   }
 

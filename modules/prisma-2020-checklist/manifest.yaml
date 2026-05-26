@@ -1,0 +1,43 @@
+id: prisma-2020-checklist
+version: 0.1.0
+name: PRISMA 2020 Checklist
+description: Generates a 27-item PRISMA 2020 checklist from run outputs and reporting artifacts.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: prisma_flow
+    schema: schemas/prisma_flow.json
+    optional: true
+  - name: manuscript
+    schema: schemas/manuscript.json
+    optional: true
+outputs:
+  - name: prisma_checklist
+    schema: schemas/prisma_checklist.json
+    description: PRISMA 2020 item completion checklist.
+    output_kind: structured_data
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Checklist flags are derived from available structured artifacts.
+  variance_sources: []
+  reproduction_metrics: [schema_validity]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: https://www.prisma-statement.org/prisma-2020-checklist

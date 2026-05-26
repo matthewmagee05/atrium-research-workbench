@@ -7,7 +7,7 @@ import { ArtifactStore, type StoredArtifact } from "../artifacts/store";
 import { AuditLog } from "../audit/audit-log";
 import { canonicalJson } from "../canonicalize/json";
 import { sha256 } from "../canonicalize/hash";
-import { ensureDir, readJsonFile, writeJsonFile } from "../fs-utils";
+import { ensureDir, readJsonFile, relativeTo, writeJsonFile } from "../fs-utils";
 import { loadModule, schemaPath } from "../modules/registry";
 import { protocolHash, readProtocol, validateProtocol } from "../protocol/service";
 import { scrubSecrets } from "../credentials/credentials";
@@ -146,13 +146,50 @@ function copyRawResponses(scratchDir: string, projectDir: string, runId: string,
   fs.cpSync(rawDir, dest, { recursive: true, force: true });
 }
 
-function collectExternalApiCalls(scratchDir: string, networkDomains: string[]): Array<{ file: string; content_hash: string; domains: string[] }> {
+function walkFiles(root: string): string[] {
+  if (!fs.existsSync(root)) return [];
+  const files: string[] = [];
+  for (const entry of fs.readdirSync(root, { withFileTypes: true })) {
+    const full = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkFiles(full));
+    } else {
+      files.push(full);
+    }
+  }
+  return files.sort();
+}
+
+function collectExternalApiCalls(args: {
+  scratchDir: string;
+  runId: string;
+  nodeId: string;
+  moduleId: string;
+  networkDomains: string[];
+}): Array<{
+  service: string;
+  endpoint: string;
+  query_params_hash: string;
+  response_archive_path: string;
+  response_archive_hash: string;
+  retrieved_at: string;
+}> {
+  const { scratchDir, runId, nodeId, moduleId, networkDomains } = args;
   const rawDir = path.join(scratchDir, "raw_responses");
   if (!fs.existsSync(rawDir)) return [];
-  const entries = fs.readdirSync(rawDir).filter((f) => f.endsWith(".json")).sort();
-  return entries.map((file) => {
-    const content = fs.readFileSync(path.join(rawDir, file));
-    return { file, content_hash: sha256(content), domains: networkDomains };
+  const endpoint = networkDomains.length > 0 ? `https://${networkDomains[0]}` : "unknown";
+  const retrievedAt = new Date().toISOString();
+  return walkFiles(rawDir).map((filePath) => {
+    const relativePath = relativeTo(rawDir, filePath);
+    const content = fs.readFileSync(filePath);
+    return {
+      service: moduleId,
+      endpoint,
+      query_params_hash: sha256(canonicalJson({ archived_file: relativePath, domains: networkDomains })),
+      response_archive_path: path.join("raw_responses", runId, nodeId, relativePath),
+      response_archive_hash: sha256(content),
+      retrieved_at: retrievedAt
+    };
   });
 }
 
@@ -256,6 +293,7 @@ async function executeNode(
     RWB_PROXY_SOCKET: proxy.url,
     RWB_LOG_PATH: path.join(scratchDir, "module.log"),
     RWB_ARTIFACT_DIR: scratchDir,
+    RWB_RAW_RESPONSES_DIR: path.join(scratchDir, "raw_responses"),
     RWB_FIXTURES_DIR: paths.fixturesRoot
   };
   for (const input of inputArtifacts) {
@@ -362,7 +400,13 @@ async function executeNode(
     });
     outputs.set(output.name, stored);
   }
-  const externalApiCalls = collectExternalApiCalls(scratchDir, loaded.manifest.side_effects?.network_domains ?? []);
+  const externalApiCalls = collectExternalApiCalls({
+    scratchDir,
+    runId,
+    nodeId: node.id,
+    moduleId: loaded.manifest.id,
+    networkDomains: loaded.manifest.side_effects?.network_domains ?? []
+  });
   const humanDecisions = resolvedDecisionsForNode(projectDir, runId, node.id);
   if (humanDecisions.length > 0 || externalApiCalls.length > 0) {
     for (const [, stored] of outputs) {

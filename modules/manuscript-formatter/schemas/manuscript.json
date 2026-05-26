@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": ["title", "style", "markdown", "assets", "title_page", "style_profile", "submission_checklist", "requires_editorial_review"],
+  "properties": {
+    "title": {"type": "string"},
+    "style": {"type": "string"},
+    "markdown": {"type": "string"},
+    "assets": {"type": "array", "items": {"type": "object"}},
+    "title_page": {"type": "object"},
+    "style_profile": {"type": "object"},
+    "submission_checklist": {"type": "array", "items": {"type": "object"}},
+    "requires_editorial_review": {"type": "boolean"}
+  },
+  "additionalProperties": false
+}

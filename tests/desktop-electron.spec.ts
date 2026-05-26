@@ -3,12 +3,14 @@ import os from "node:os";
 import path from "node:path";
 import { _electron as electron, expect, test } from "@playwright/test";
 import type { ElectronApplication, Page } from "@playwright/test";
+import { createReviewItem, initProject } from "../packages/core/src";
 
 const desktopDir = path.resolve(__dirname, "..", "apps", "desktop");
 const electronMain = path.join(desktopDir, "dist", "main", "main.js");
 
 let app: ElectronApplication;
 let window: Page;
+let electronArch = process.arch;
 
 test.beforeAll(async () => {
   app = await electron.launch({
@@ -22,6 +24,7 @@ test.beforeAll(async () => {
   });
   window = await app.firstWindow();
   await window.waitForLoadState("domcontentloaded");
+  electronArch = await app.evaluate(() => process.arch);
 });
 
 test.afterAll(async () => {
@@ -136,6 +139,7 @@ test.describe("Atrium Electron main-process E2E", () => {
   });
 
   test("rwb:run accepts a live pipeline payload, writes protocol.yaml, freezes, and runs", async () => {
+    test.skip(process.arch !== electronArch, `better-sqlite3 was built for ${process.arch}, Electron is ${electronArch}`);
 
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-e2e-run-"));
     const protocolPath = path.join(dir, "protocol.yaml");
@@ -236,5 +240,48 @@ test.describe("Atrium Electron main-process E2E", () => {
     expect(exposed.inspectBundleTrust).toBe(true);
     expect(exposed.diffArtifacts).toBe(true);
     expect(exposed.testCredential).toBe(true);
+  });
+
+  test("actual renderer template flow exposes editable LLM controls and review queue panel", async () => {
+    if (await window.getByRole("button", { name: /Pick a starting template/ }).isVisible().catch(() => false)) {
+      await window.getByRole("button", { name: /Pick a starting template/ }).click();
+      await window.getByRole("button", { name: /Use this template/ }).click();
+    }
+    await expect(window.getByText(/LLM provider and model/)).toBeVisible();
+    await window.getByRole("combobox", { name: /^Provider/ }).selectOption("openai");
+    await expect(window.getByRole("combobox", { name: /^Model/ })).toHaveValue("gpt-4o-mini");
+    await expect(window.getByText("Review queue")).toBeVisible();
+    await window.getByPlaceholder("name or email").fill("electron-reviewer@example.com");
+    await window.getByPlaceholder("0000-0000-0000-0000").fill("0000-0002-1825-0097");
+    await expect(window.getByPlaceholder("0000-0000-0000-0000")).toHaveValue("0000-0002-1825-0097");
+  });
+
+  test("review queue IPC lists and resolves decisions with ORCID attribution", async () => {
+    test.skip(process.arch !== electronArch, `better-sqlite3 was built for ${process.arch}, Electron is ${electronArch}`);
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "rwb-e2e-review-"));
+    initProject(dir);
+    const item = createReviewItem(dir, { claim: "Needs adjudication" }, { type: "object" }, { nodeId: "node-1", runId: "run-1" });
+
+    const result = await app.evaluate(async ({ ipcMain }, args) => {
+      const handlers = (ipcMain as unknown as { _invokeHandlers: Map<string, (e: unknown, ...a: unknown[]) => unknown> })._invokeHandlers;
+      const listHandler = handlers.get("rwb:review:list");
+      const resolveHandler = handlers.get("rwb:review:resolve");
+      if (!listHandler || !resolveHandler) throw new Error("review IPC handlers not registered");
+      const before = await listHandler({}, args.dir);
+      const resolved = await resolveHandler({}, args.dir, args.id, {
+        accepted: true,
+        decision_type: "accept",
+        decided_by: "electron-reviewer@example.com",
+        reviewer_orcid: "0000-0002-1825-0097",
+      });
+      const after = await listHandler({}, args.dir);
+      return { before, resolved, after };
+    }, { dir, id: item.id });
+
+    expect((result.before as Array<unknown>)).toHaveLength(1);
+    expect((result.resolved as { status: string }).status).toBe("resolved");
+    expect((result.resolved as { decision: { reviewer_orcid: string } }).decision.reviewer_orcid).toBe("0000-0002-1825-0097");
+    expect((result.after as Array<{ status: string }>)[0].status).toBe("resolved");
+    fs.rmSync(dir, { recursive: true });
   });
 });

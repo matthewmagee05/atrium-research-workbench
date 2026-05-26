@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": [
+    "flags"
+  ],
+  "properties": {
+    "flags": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    }
+  },
+  "additionalProperties": false
+}

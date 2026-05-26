@@ -1,0 +1,25 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {
+      "type": "string",
+      "enum": [
+        "fixture",
+        "snapshot",
+        "live_archived"
+      ],
+      "default": "fixture"
+    },
+    "fixture_id": {
+      "type": "string",
+      "default": "tiny-corpus"
+    },
+    "snapshot_path": {
+      "type": "string"
+    },
+    "input_path": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

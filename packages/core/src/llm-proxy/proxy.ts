@@ -23,6 +23,34 @@ function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
+type TokenPrice = { inputPerMillion: number; outputPerMillion: number };
+
+function priceForModel(provider: ModelBinding["provider"], modelId: string): TokenPrice {
+  const model = modelId.toLowerCase();
+  if (provider === "ollama") {
+    return { inputPerMillion: 0, outputPerMillion: 0 };
+  }
+  if (provider === "openai") {
+    if (model.includes("gpt-4o-mini")) return { inputPerMillion: 0.15, outputPerMillion: 0.60 };
+    if (model.includes("gpt-4o")) return { inputPerMillion: 2.50, outputPerMillion: 10.00 };
+    if (model.includes("gpt-5")) return { inputPerMillion: 1.25, outputPerMillion: 10.00 };
+    if (model.includes("gpt-4.1-mini")) return { inputPerMillion: 0.40, outputPerMillion: 1.60 };
+    if (model.includes("gpt-4.1-nano")) return { inputPerMillion: 0.10, outputPerMillion: 0.40 };
+    if (model.includes("gpt-4.1")) return { inputPerMillion: 2.00, outputPerMillion: 8.00 };
+  }
+  if (provider === "anthropic") {
+    if (model.includes("opus")) return { inputPerMillion: 15.00, outputPerMillion: 75.00 };
+    if (model.includes("sonnet")) return { inputPerMillion: 3.00, outputPerMillion: 15.00 };
+    if (model.includes("haiku")) return { inputPerMillion: 0.80, outputPerMillion: 4.00 };
+  }
+  return { inputPerMillion: 0, outputPerMillion: 0 };
+}
+
+export function estimateCostUsd(binding: ModelBinding, inputTokens: number, outputTokens: number): number {
+  const price = priceForModel(binding.provider, binding.model_id);
+  return Number((((inputTokens / 1_000_000) * price.inputPerMillion) + ((outputTokens / 1_000_000) * price.outputPerMillion)).toFixed(8));
+}
+
 function responseTextFromOpenAI(payload: Record<string, unknown>): string {
   if (typeof payload.output_text === "string") {
     return payload.output_text;
@@ -131,14 +159,19 @@ async function callOllama(request: LlmCompleteRequest, baseUrl: string): Promise
 
 export async function llmComplete(request: LlmCompleteRequest): Promise<LlmCompleteResponse> {
   const model = resolveModel(request.binding);
+  const estimatedInputTokens = estimateTokens(request.messages.map((message) => message.content).join("\n"));
   if (process.env.RWB_LLM_MOCK_RESPONSE) {
     const mock = JSON.parse(process.env.RWB_LLM_MOCK_RESPONSE) as { text?: string; input_tokens?: number; output_tokens?: number };
+    const inputTokens = mock.input_tokens ?? estimatedInputTokens;
+    const outputTokens = mock.output_tokens ?? estimateTokens(mock.text ?? "");
+    const costUsd = estimateCostUsd(request.binding, inputTokens, outputTokens);
+    assertBudgetAvailable(request.budget, { cost_usd: costUsd, calls: 1, tokens: inputTokens + outputTokens });
     return {
       text: mock.text ?? "",
       model_resolved: model.model_resolved,
-      input_tokens: mock.input_tokens ?? 0,
-      output_tokens: mock.output_tokens ?? 0,
-      cost_usd_estimate: 0,
+      input_tokens: inputTokens,
+      output_tokens: outputTokens,
+      cost_usd_estimate: costUsd,
       raw_response: { mocked: true }
     };
   }
@@ -146,20 +179,26 @@ export async function llmComplete(request: LlmCompleteRequest): Promise<LlmCompl
   if (!credential && request.binding.provider !== "ollama") {
     throw new Error(`Missing credential for ${request.binding.provider}`);
   }
-  const estimatedInputTokens = estimateTokens(request.messages.map((message) => message.content).join("\n"));
-  assertBudgetAvailable(request.budget, { cost_usd: 0, calls: 1, tokens: estimatedInputTokens + (request.max_output_tokens ?? 2048) });
+  const maxOutputTokens = request.max_output_tokens ?? 2048;
+  assertBudgetAvailable(request.budget, {
+    cost_usd: estimateCostUsd(request.binding, estimatedInputTokens, maxOutputTokens),
+    calls: 1,
+    tokens: estimatedInputTokens + maxOutputTokens
+  });
   const result =
     request.binding.provider === "openai" ? await callOpenAI(request, credential as string) :
     request.binding.provider === "anthropic" ? await callAnthropic(request, credential as string) :
     await callOllama(request, credential ?? "http://localhost:11434");
   const inputTokens = result.inputTokens ?? estimatedInputTokens;
   const outputTokens = result.outputTokens ?? estimateTokens(result.text);
+  const costUsd = estimateCostUsd(request.binding, inputTokens, outputTokens);
+  assertBudgetAvailable(request.budget, { cost_usd: costUsd, calls: 1, tokens: inputTokens + outputTokens });
   return {
     text: result.text,
     model_resolved: model.model_resolved,
     input_tokens: inputTokens,
     output_tokens: outputTokens,
-    cost_usd_estimate: 0,
+    cost_usd_estimate: costUsd,
     raw_response: result.raw
   };
 }

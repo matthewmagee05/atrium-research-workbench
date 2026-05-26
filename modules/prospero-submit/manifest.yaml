@@ -1,0 +1,41 @@
+id: prospero-submit
+version: 0.1.0
+name: PROSPERO Submit
+description: Generates a manual PROSPERO submission template from a preregistration draft.
+stage: report
+runtime: python
+entry: entry.py
+runtime_version: ">=3.11"
+dependencies:
+  python: requirements.txt
+inputs:
+  - name: preregistration
+    schema: schemas/anything.json
+    optional: true
+outputs:
+  - name: prospero_submission
+    schema: schemas/submission.json
+    description: Manual submission template.
+    output_kind: report_text
+params_schema: schemas/params.json
+llm:
+  required: false
+  budget: {max_tokens_per_run: 0, max_calls_per_run: 0, max_cost_usd_per_run: 0}
+  prompts: []
+determinism:
+  level: deterministic
+  guarantee: Fixture and snapshot modes are deterministic; live modes archive raw requests and responses when applicable.
+  variance_sources: []
+  reproduction_metrics: [schema_validity, row_count_agreement]
+human_in_the_loop:
+  enabled: false
+  triggers: []
+side_effects:
+  network: false
+  network_domains: []
+  filesystem_write: true
+  external_processes: false
+author: Research Workbench
+license: MIT
+documentation_url: 
+

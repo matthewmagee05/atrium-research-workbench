@@ -40,7 +40,13 @@
     "mac": {
       "category": "public.app-category.education",
       "target": [
-        {"target": "dmg", "arch": ["x64", "arm64"]}
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
       ],
       "hardenedRuntime": true,
       "gatekeeperAssess": false
@@ -48,13 +54,28 @@
     "linux": {
       "category": "Science",
       "target": [
-        {"target": "AppImage", "arch": ["x64"]},
-        {"target": "deb", "arch": ["x64"]}
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "deb",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "win": {
       "target": [
-        {"target": "nsis", "arch": ["x64"]}
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
       ]
     },
     "nsis": {
@@ -67,7 +88,8 @@
     "@research-workbench/core": "file:../../packages/core",
     "@rjsf/core": "^6.0.1",
     "@rjsf/validator-ajv8": "^6.0.1",
-    "electron": "^33.4.11",
+    "better-sqlite3": "^12.10.0",
+    "electron": "^41.7.0",
     "keytar": "^7.9.0",
     "lucide-react": "^0.511.0",
     "react": "^19.1.0",
@@ -76,9 +98,9 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.1",
     "@types/react": "^19.1.5",
     "@types/react-dom": "^19.1.5",
-    "@electron/rebuild": "^3.7.1",
     "@vitejs/plugin-react": "^4.5.0",
     "electron-builder": "^25.1.8",
     "vite": "^6.3.5",

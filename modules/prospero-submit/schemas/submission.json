@@ -1,0 +1,19 @@
+{
+  "type": "object",
+  "required": [
+    "markdown",
+    "requires_manual_submission"
+  ],
+  "properties": {
+    "markdown": {
+      "type": "string"
+    },
+    "requires_manual_submission": {
+      "type": "boolean"
+    },
+    "template": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}

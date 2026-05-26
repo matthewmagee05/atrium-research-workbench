@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "source_mode": {"type": "string", "enum": ["fixture", "snapshot", "live_archived"], "default": "fixture"},
+    "fixture_id": {"type": "string", "default": "tiny-corpus"},
+    "snapshot_path": {"type": "string"},
+    "email": {"type": "string", "description": "Email required by Unpaywall for live_archived mode."},
+    "max_records": {"type": "integer", "minimum": 1, "default": 50}
+  },
+  "additionalProperties": false
+}

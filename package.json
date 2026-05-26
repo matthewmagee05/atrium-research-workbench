@@ -14,7 +14,8 @@
     "golden:tier1a": "npm run build && vitest run tests/tier1a-golden.test.ts",
     "test:desktop": "npm run build -w apps/desktop && playwright test --project=renderer",
     "test:electron": "npm run build -w apps/desktop && playwright test --project=electron",
-    "typecheck": "npm run build -w packages/core && npm run typecheck -w packages/core && npm run typecheck -w apps/cli && npm run typecheck -w apps/desktop"
+    "typecheck": "npm run build -w packages/core && npm run typecheck -w packages/core && npm run typecheck -w apps/cli && npm run typecheck -w apps/desktop",
+    "release:preflight": "node scripts/check-release-signing.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.15.21",

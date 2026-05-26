@@ -1,0 +1,6 @@
+Package: meta-analysis-r-module
+Type: Package
+Title: Research Workbench Meta-analysis Module
+Version: 0.1.0
+Imports:
+    jsonlite

@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "required": ["outcomes"],
+  "properties": {
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["outcome", "certainty", "reasons", "requires_review"],
+        "properties": {
+          "outcome": {"type": "string"},
+          "certainty": {"type": "string"},
+          "reasons": {"type": "array", "items": {"type": "string"}},
+          "effect": {"type": "object"},
+          "requires_review": {"type": "boolean"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

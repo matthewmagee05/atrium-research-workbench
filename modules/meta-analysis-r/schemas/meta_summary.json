@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "required": ["k", "pooled_effect", "pooled_se", "ci95", "q", "i2", "tau2", "prediction_interval"],
+  "properties": {
+    "k": {"type": "integer"},
+    "pooled_effect": {"type": "number"},
+    "pooled_se": {"type": "number"},
+    "ci95": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2},
+    "q": {"type": "number"},
+    "i2": {"type": "number"},
+    "tau2": {"type": "number"},
+    "prediction_interval": {"type": "array", "items": {"type": "number"}, "minItems": 2, "maxItems": 2}
+  },
+  "additionalProperties": false
+}
